@@ -1,0 +1,500 @@
+#!/usr/bin/env bash
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !
+# ! Note:
+# !
+# ! THIS SCRIPT HAS BEEN AUTOMATICALLY GENERATED USING 
+# ! swagger-codegen-bash (github.com/bkryza/swagger-codegen-bash) 
+# ! FROM SWAGGER SPECIFICATION IN JSON.
+# !
+# ! Generated on: {{generatedDate}}
+# !
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+#
+# This is a Bash client for {{appName}}. 
+#
+# LICENSE:
+# {{licenseUrl}}
+#
+# CONTACT:
+# {{infoEmail}}
+#
+# MORE INFORMATION:
+# {{#externalDocs}}{{url}}{{/externalDocs}}
+#
+
+
+###############################################################################
+# 
+# Global variables
+# 
+###############################################################################
+
+##
+# The filename of this script for documentation
+script_name=`basename "$0"`
+
+##
+# Map for headers passed after operation as KEY:VALUE
+declare -A header_arguments
+
+
+##
+# Map for operation parameters passed after operation as PARAMETER=VALUE
+# These will be mapped to appropriate path or query parameters
+declare -A operation_parameters
+
+##
+# Map for body parameters passed after operation as PARAMETER:=VALUE
+# These will be mapped to top level json keys ( {"PARAMETER": VALUE})
+declare -A body_parameters
+
+## 
+# These arguments will be directly passed to cURL 
+curl_arguments=""
+
+##
+# The host for making the request
+host=""
+
+##
+# If true, the script will only output the actual cURL command that would be 
+# used
+print_curl=false
+
+##
+# The operation ID passed on the command line
+operation=""
+
+
+##############################################################################
+#
+# Converts an associative array into a list of cURL header
+# arguments (-H "KEY: VALUE")
+#
+##############################################################################
+function header_arguments_to_curl {
+    local headers_curl=""
+    for key in "${!header_arguments[@]}"; do
+        headers_curl+="-H \"${key}: ${header_arguments[${key}]}\""
+    done
+    headers_curl+=" "
+    echo "${headers_curl}"
+}
+
+##############################################################################
+#
+# Converts an associative array into a simple JSON with keys as top
+# level object attributes
+# 
+# \todo Add convertion of more complex attributes using paths
+#
+##############################################################################
+function body_parameters_to_json {
+    local body_json="-d '{"
+    local body_parameter_count=${#body_parameters[@]}
+    local count=0
+    for key in "${!body_parameters[@]}"; do
+        body_json+="\"${key}\": ${body_parameters[${key}]}"
+        if [[ $count -lt $body_parameter_count-1 ]]; then
+            body_json+=", "
+        fi
+        count+=1
+    done
+    body_json+="}'"
+
+    if [[ "${#body_parameters[@]}" -eq 0 ]]; then
+        echo ""
+    else
+        echo "${body_json}"
+    fi
+}
+
+##############################################################################
+#
+# Build request path including query parameters
+#
+##############################################################################
+function build_request_path {
+    local path_template=$1
+    local -n path_params=$2
+    local -n query_params=$3
+
+    # First replace all path parameters in the path
+    for pparam in "${path_params[@]}"; do
+        regexp="(.*)(\{$pparam\})(.*)"
+        if [[ $path_template =~ $regexp ]]; then
+            path_template=${BASH_REMATCH[1]}${operation_parameters[$pparam]}${BASH_REMATCH[3]}
+        fi
+    done
+
+    # Now append query parameters - if any
+    if [[ ${#query_params[@]} -gt 0 ]]; then
+        path_template+="?"
+    fi
+
+    local query_parameter_count=${#query_params[@]}
+    local count=0
+    for qparam in "${query_params[@]}"; do
+        path_template+="${qparam}=${operation_parameters[${qparam}]}"
+        if [[ $count -lt $query_parameter_count-1 ]]; then
+            path_template+="&"
+        fi
+        count+=1
+    done
+
+    echo $path_template
+}
+
+
+
+###############################################################################
+# 
+# Print main help message
+# 
+###############################################################################
+function print_help {
+    echo ""
+    echo -e "$(tput bold){{appName}} command line client (API version {{#swagger}}{{#info}}{{version}}{{/info}}{{/swagger}})$(tput sgr0)"
+    echo ""
+    echo -e "$(tput bold)Usage:$(tput sgr0)"
+    echo -e ""
+    echo -e "  $ ./${script_name} [CURL_OPTIONS] [--host HOST] OPERATION [HEADERS] [PARAMETERS]"
+    echo ""
+    echo -e "  $ cat body_content.json > ./${script_name} [--host HOST] [CURL_OPTIONS] OPERATION [PARAMETERS]"
+    echo ""
+    echo -e "  CURL_OPTIONS - any valid cURL options can be passed before OPERATION"
+    echo -e "  HEADERS - HTTP headers can be passed in the form HEADER:VALUE"
+    echo -e "  PARAMETERS - REST operation parameters can be passed in the following forms:"
+    echo -e "    * KEY=VALUE - path or query parameters"
+    echo -e "    * KEY:=VALUE - body parameters which will be added to body Json as '{ \"KEY\": \"VALUE\" }'"
+    echo -e "    * KEY+=VALUE - body parameters which will be added to body Json as '{ \"KEY\": VALUE }'"
+    echo ""
+{{#hasAuthMethods}}
+    echo -e "$(tput bold)Authentication options$(tput sgr0)"
+    echo -e ""
+{{#authMethods}}
+{{#isBasic}}
+    echo -e "  Basic AUTH (add '-u username:password' before OPERATION)"
+{{/isBasic}}
+{{#isApiKey}}
+    echo -e "  Api-key (add '{{keyParamName}}:ACCESS_KEY' after OPERATION)"
+{{/isApiKey}}
+{{#isOAuth}}
+    echo -e "  OAuth (url: {{authorizationUrl}})"
+    echo -e "    scopes:"
+{{#scopes}}
+    echo -e "      * {{scope}} - {{description}}"
+{{/scopes}}
+{{/isOAuth}}
+{{/authMethods}}
+    echo ""
+{{/hasAuthMethods}}
+    echo -e "$(tput bold)Operations:$(tput sgr0)"
+{{#apiInfo}}
+{{#apis}}
+    echo ""
+    echo -e "$(tput bold)[{{classVarName}}]$(tput sgr0)"
+read -d '' ops <<EOF
+{{#operations}}
+{{#operation}}
+  {{operationId}};{{{summary}}}
+{{/operation}}
+{{/operations}}
+EOF
+echo "  $ops" | column -t -s ';'
+{{/apis}}
+{{/apiInfo}}
+    echo ""
+    echo -e "$(tput bold)Options$(tput sgr0)"
+    echo -e "  -h,--help\tPrint this help"
+    echo -e "  -V,--version\tPrint API version"
+    echo -e "  --about\tPrint the information about service"
+    echo -e "  --dry-run\tPrint out the cURL command without executing it"
+    echo ""
+}
+
+
+##############################################################################
+#
+# Print REST service description
+#
+##############################################################################
+function print_about {
+    echo ""
+    echo -e "$(tput bold){{appName}} command line client (API version {{#swagger}}{{#info}}{{version}}{{/info}}{{/swagger}})$(tput sgr0)"
+    echo ""
+read -d '' appdescription <<EOF
+{{{appDescription}}}
+EOF
+echo "$appdescription"
+}
+
+
+##############################################################################
+#
+# Print REST api version
+#
+##############################################################################
+function print_version {
+    echo ""
+    echo -e "$(tput bold){{appName}} command line client (API version {{#swagger}}{{#info}}{{version}}{{/info}}{{/swagger}})$(tput sgr0)"
+    echo ""
+}
+
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+##############################################################################
+#
+# Print help for {{operationId}} operation
+#
+##############################################################################
+function print_{{operationId}}_help {
+    echo ""
+    echo -e "$(tput bold){{{appName}}}  command line client$(tput sgr0)"
+    echo ""
+    echo -e "$(tput bold){{operationId}}$(tput sgr0) - {{{summary}}}"
+    echo ""
+{{#hasConsumes}}
+    echo -e "$(tput bold)Accepts$(tput sgr0)"
+{{#consumes}}
+    echo -e "  - {{{mediaType}}}"
+{{/consumes}}
+    echo ""
+{{/hasConsumes}}
+    echo -e "$(tput bold)Parameters$(tput sgr0)"
+{{#pathParams}}
+    echo -e "  {{paramName}} [{{dataType}}] - {{{description}}}{{#required}} (required){{/required}}"
+{{/pathParams}}
+{{#queryParams}}
+    echo -e "  {{paramName}} [{{dataType}}] - {{{description}}}{{#required}} (required){{/required}}"
+{{/queryParams}}
+{{#headerParams}}
+    echo -e "  {{paramName}} [{{dataType}}] - {{{description}}}{{#required}} (required){{/required}}"
+{{/headerParams}}
+{{#bodyParams}}
+    echo -e "  {{paramName}} [{{dataType}}] - {{{description}}}{{#required}} (required){{/required}}"
+{{/bodyParams}}
+    echo -e ""
+{{#bodyParams}}
+{{#vendorExtensions}}
+    echo -e "$(tput bold)Body content example$(tput sgr0)"
+    echo -e ""
+    echo -e '{{{x-codegen-body-example}}}'
+    echo -e ""
+{{/vendorExtensions}}
+{{/bodyParams}}
+}
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+##############################################################################
+#
+# Call {{operationId}} operation
+#
+##############################################################################
+function call_{{operationId}} {
+    local path_parameter_names=()
+    local query_parameter_names=()
+
+
+    local path=$(build_request_path "{{basePathWithoutHost}}{{path}}" path_parameter_names query_parameter_names)
+
+    local method="{{httpMethod}}"
+
+
+    local headers_curl=$(header_arguments_to_curl)
+    local body_json_curl=$(body_parameters_to_json)
+
+    echo ""
+    if [[ "$print_curl" = true ]]; then
+        echo "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+    else
+        eval "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+    fi
+}
+
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+
+##############################################################################
+#
+# Main 
+#
+##############################################################################
+
+
+# First, read any input (if available) from piped stdin as body content
+body_content=""
+if [[ -p /dev/stdin ]]; then
+    body_content=$(cat -)
+fi
+
+# Make sure Bash is at least in version 4.0
+if [[ ${BASH_VERSION:0:1} < 4 ]]; then
+    echo "Sorry - your Bash version is ${BASH_VERSION}"
+    echo ""
+    echo "You need at least Bash 4.0 to run this script."
+    exit 1
+fi
+
+
+#
+# Process command line
+# 
+# Pass all initial options to cURL before one is
+# the operation ID
+take_host=false
+for key in "$@"; do
+if [[ "$host" = true ]]; then
+    host="$key"
+    take_host=false
+    continue
+fi
+case $key in
+    -h|--help)
+    if [[ "x$operation" == "x" ]]; then
+        print_help
+        exit 0
+    else
+        eval "print_${operation}_help"
+        exit 0
+    fi
+    ;;
+    -V|--version)
+    print_version
+    exit 0
+    ;;
+    --about)
+    print_about
+    exit 0
+    ;;
+    --host)
+    take_host=true
+    ;;
+    --dry-run)
+    print_curl=true
+    ;;
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+    {{operationId}})
+    operation="{{operationId}}"
+    ;;
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+    *:=*)
+    # Parse body arguments and convert them into top level 
+    # JSON properties passed in the body content as strings
+    if [[ "$operation" ]]; then
+        IFS=':=' read body_key sep body_value <<< "$key"
+        body_parameters[${body_key}]="\"${body_value}\""
+    fi
+    ;;
+    *+=*)
+    # Parse body arguments and convert them into top level 
+    # JSON properties passed in the body content as numeric values
+    if [[ "$operation" ]]; then
+        IFS='+=' read body_key sep body_value <<< "$key"
+        body_parameters[${body_key}]=${body_value}
+    fi
+    ;;
+    *:*)
+    # Parse header arguments and convert them into curl
+    # only after the operation argument
+    if [[ "$operation" ]]; then
+        IFS=':' read header_name header_value <<< "$key"
+        header_arguments[$header_name]=$header_value
+    else
+        curl_arguments+=" $key"
+    fi
+    ;;
+    *=*)
+    # Parse operation arguments and convert them into curl
+    # only after the operation argument
+    if [[ "$operation" ]]; then
+        IFS='=' read parameter_name parameter_value <<< "$key"
+        operation_parameters[$parameter_name]=$parameter_value
+    else
+        curl_arguments+=" $key"
+    fi
+    ;;
+    *)
+    # If we are before the operation, treat the arguments as cURL arguments
+    if [[ "x$operation" == "x" ]]; then
+        # Maintain quotes around cURL arguments if necessary
+        space_regexp="[[:space:]]"
+        if [[ $key =~ $space_regexp ]]; then
+            curl_arguments+=" \"$key\""
+        else
+            curl_arguments+=" $key"
+        fi
+    fi
+    ;;
+esac
+done
+
+
+
+echo "CURL_ARGUMENTS: ${curl_arguments}"
+echo "HEADERS:"
+for i in "${!header_arguments[@]}"; do
+    echo "   $i: ${header_arguments[$i]}";
+done
+echo "HOST: ${host}"
+echo "OPERATION: ${operation}"
+echo "BODY:"
+for i in "${!body_parameters[@]}"; do
+    echo "   $i: ${body_parameters[$i]}";
+done
+
+# Check if user provided host name
+if [[ -z "$PETSTORE_HOST" && -z "$host" ]]; then
+    echo "No hostname provided!!!"
+    exit 1
+fi
+
+# Check if user specified operation ID
+if [[ -z "$operation" ]]; then
+    echo "No operation specified!!!"
+    exit 1
+fi
+
+
+# Run cURL command based on the operation ID
+case $operation in
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+    {{operationId}})
+    call_{{operationId}}
+    ;;
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+    *)
+    echo "Unknown operation: $operation"
+    echo ""
+    print_help
+    exit 1
+esac
+
