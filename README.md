@@ -48,7 +48,7 @@ $ ./client.sh addPet --help
 
 # Call REST API operation
 $ ./client.sh --host http://petstore.swagger.io addPet 
-
+```
 
 
 ## TODO
