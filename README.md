@@ -52,8 +52,8 @@ $ ./client.sh --host http://petstore.swagger.io addPet
 
 
 ## TODO
-[] Add checking if all required parameters are provided
-[] Add option to specify default cURL options in codegen which will be passed to each command
+* [] Add checking if all required parameters are provided
+* [] Add option to specify default cURL options in codegen which will be passed to each command
 
 
 

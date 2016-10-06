@@ -360,7 +360,7 @@ fi
 # the operation ID
 take_host=false
 for key in "$@"; do
-if [[ "$host" = true ]]; then
+if [[ "$take_host" = true ]]; then
     host="$key"
     take_host=false
     continue
