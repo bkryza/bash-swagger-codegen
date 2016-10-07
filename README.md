@@ -29,7 +29,7 @@ $ chmod +x output/client.sh
 ```
 
 
-### Using the Bash script
+### Using the generated Bash script
 
 ```shell
 
