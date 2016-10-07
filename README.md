@@ -1,15 +1,11 @@
 # bash-swagger-codegen library
 
 ## Overview
-This is a Bash client generator for REST services from their Swagger specification.
+This is a Bash client generator for REST services from their Swagger™ specification.
 
 This generator uses [swagger-codegen](github.com/swagger-api/swagger-codegen).
 
-## What's Swagger?
-The goal of Swagger™ is to define a standard, language-agnostic interface to REST APIs which allows both humans and computers to discover and understand the capabilities of the service without access to source code, documentation, or through network traffic inspection. When properly defined via Swagger, a consumer can understand and interact with the remote service with a minimal amount of implementation logic. Similar to what interfaces have done for lower-level programming, Swagger removes the guesswork in calling the service.
-
-
-Check out [OpenAPI-Spec](https://github.com/OAI/OpenAPI-Specification) for additional information about the Swagger project, including additional libraries with support for other languages and more. 
+For more information about Swagger™ check out [OpenAPI-Spec](https://github.com/OAI/OpenAPI-Specification).
 
 ## Usage
 
@@ -38,27 +34,32 @@ $ chmod +x output/client.sh
 ```shell
 
 # Print the list of operations available on the service
-$ ./client.sh --help
+$ output/client.sh --help
 
 # Print the service description
-$ ./client.sh --about
+$ output/client.sh --about
 
 # Print detailed information about specific operation
-$ ./client.sh addPet --help
+$ output/client.sh addPet --help
 
 # Call REST API operation
-$ ./client.sh --host http://petstore.swagger.io addPet 
+$ echo '{"id":891,"name":"lucky","status":"available"}' | output/client.sh --host http://petstore.swagger.io addPet content-type:application/json
+
+# The above is equivalent to
+$ output/client.sh --host http://petstore.swagger.io addPet content-type:application/json id+=891 name:=lucky status:=available
 ```
 
 
 ## TODO
 * [] Add checking if all required parameters are provided
 * [] Add option to specify default cURL options in codegen which will be passed to each command
+* [] Add shell completion generation
+* [] Wrap handling of errors returned by the service, using comments defined in the Swagger specification
+* [] Add abbreviate support for standard headers (Accept, Content-type, X-Auth-Token, ...)
 
 
 
 ## LICENSE
-
 Copyright 2016 Bartosz Kryza <bkryza@gmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");

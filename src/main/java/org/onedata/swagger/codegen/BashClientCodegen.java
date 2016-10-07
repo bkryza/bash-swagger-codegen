@@ -296,7 +296,7 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
                      .replace("\\", "\\\\")
                      .replace("\"", "\\\""));
 
-      // Convert markdown **asdasd** to bash bold control sequences
+      // Convert markdown **Bold text** to bash bold control sequences
       // result = result.replaceAll("(^|\\s)\\*{2}([\\w\\d ]+)\\*{2}($|\\s)", 
       //                   "\\$(tput bold)$1\\$(tput sgr0)");
 
@@ -307,7 +307,11 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
       return result;
   }
 
-
+  @Override
+  public String escapeQuotationMark(String input) {
+      return input;
+  }
+  
   /**
    * override with any special text escaping logic to handle unsafe
    * characters so as to avoid code injection

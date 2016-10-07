@@ -68,6 +68,9 @@ print_curl=false
 # The operation ID passed on the command line
 operation=""
 
+##
+# If there is any body content on the stdin pass it to the body of the request
+body_content_temp_file=""
 
 ##############################################################################
 #
@@ -177,16 +180,16 @@ function print_help {
     echo -e ""
 {{#authMethods}}
 {{#isBasic}}
-    echo -e "  Basic AUTH (add '-u username:password' before OPERATION)"
+    echo -e "  - Basic AUTH (add '-u username:password' before OPERATION)"
 {{/isBasic}}
 {{#isApiKey}}
-    echo -e "  Api-key (add '{{keyParamName}}:ACCESS_KEY' after OPERATION)"
+    echo -e "  - Api-key (add '{{keyParamName}}:ACCESS_KEY' after OPERATION)"
 {{/isApiKey}}
 {{#isOAuth}}
-    echo -e "  OAuth (url: {{authorizationUrl}})"
-    echo -e "    scopes:"
+    echo -e "  - OAuth (url: {{authorizationUrl}})"
+    echo -e "      scopes:"
 {{#scopes}}
-    echo -e "      * {{scope}} - {{description}}"
+    echo -e "        * {{scope}} - {{description}}"
 {{/scopes}}
 {{/isOAuth}}
 {{/authMethods}}
@@ -259,13 +262,6 @@ function print_{{operationId}}_help {
     echo ""
     echo -e "$(tput bold){{operationId}}$(tput sgr0) - {{{summary}}}"
     echo ""
-{{#hasConsumes}}
-    echo -e "$(tput bold)Accepts$(tput sgr0)"
-{{#consumes}}
-    echo -e "  - {{{mediaType}}}"
-{{/consumes}}
-    echo ""
-{{/hasConsumes}}
     echo -e "$(tput bold)Parameters$(tput sgr0)"
 {{#pathParams}}
     echo -e "  {{paramName}} [{{dataType}}] - {{{description}}}{{#required}} (required){{/required}}"
@@ -276,8 +272,16 @@ function print_{{operationId}}_help {
 {{#headerParams}}
     echo -e "  {{paramName}} [{{dataType}}] - {{{description}}}{{#required}} (required){{/required}}"
 {{/headerParams}}
+{{#hasConsumes}}
+    echo ""
+    echo -e "$(tput bold)Accepts (in body)$(tput sgr0)"
+{{#consumes}}
+    echo -e "  - {{{mediaType}}}"
+{{/consumes}}
+    echo ""
+{{/hasConsumes}}
 {{#bodyParams}}
-    echo -e "  {{paramName}} [{{dataType}}] - {{{description}}}{{#required}} (required){{/required}}"
+    echo -e "  {{{description}}}{{#required}} (required){{/required}}"
 {{/bodyParams}}
     echo -e ""
 {{#bodyParams}}
@@ -305,8 +309,8 @@ function print_{{operationId}}_help {
 #
 ##############################################################################
 function call_{{operationId}} {
-    local path_parameter_names=()
-    local query_parameter_names=()
+    local path_parameter_names=({{#pathParams}}{{baseName}}{{/pathParams}})
+    local query_parameter_names=({{#queryParams}}{{baseName}}{{/queryParams}})
 
 
     local path=$(build_request_path "{{basePathWithoutHost}}{{path}}" path_parameter_names query_parameter_names)
@@ -315,14 +319,43 @@ function call_{{operationId}} {
 
 
     local headers_curl=$(header_arguments_to_curl)
-    local body_json_curl=$(body_parameters_to_json)
 
-    echo ""
-    if [[ "$print_curl" = true ]]; then
-        echo "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+
+
+{{#hasBodyParam}}
+    local body_json_curl=""
+
+    #
+    # If we have received some body content over pipe, pass it from the
+    # temporary file to cURL
+    #
+    if [[ ! -z $body_content_temp_file ]]; then
+        if [[ "$print_curl" = true ]]; then
+            echo "cat ${body_content_temp_file} | curl ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        else
+            eval "cat ${body_content_temp_file} | curl ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+        fi
+        rm "${body_content_temp_file}"
+    #
+    # If not, try to build the content body from arguments KEY:=VALUE and KEY+=VALUE
+    #
     else
-        eval "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+        body_json_curl = $(body_parameters_to_json)
+        if [[ "$print_curl" = true ]]; then
+            echo "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\" -d @-"
+        else
+            eval "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\" -d @-"
+        fi
     fi
+{{/hasBodyParam}}
+{{^hasBodyParam}}
+    if [[ "$print_curl" = true ]]; then
+        echo ""
+        echo "curl ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    else
+        eval "curl ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+    fi
+{{/hasBodyParam}}
 }
 
 {{/operation}}
@@ -337,11 +370,11 @@ function call_{{operationId}} {
 #
 ##############################################################################
 
-
 # First, read any input (if available) from piped stdin as body content
-body_content=""
+# into a temporary file
 if [[ -p /dev/stdin ]]; then
-    body_content=$(cat -)
+    body_content_temp_file=$(mktemp)
+    cat - > $body_content_temp_file
 fi
 
 # Make sure Bash is at least in version 4.0
@@ -356,8 +389,8 @@ fi
 #
 # Process command line
 # 
-# Pass all initial options to cURL before one is
-# the operation ID
+# Pass all arguemnts before 'operation' to cURL except the ones we override
+#
 take_host=false
 for key in "$@"; do
 if [[ "$take_host" = true ]]; then
@@ -452,28 +485,20 @@ esac
 done
 
 
-
-echo "CURL_ARGUMENTS: ${curl_arguments}"
-echo "HEADERS:"
-for i in "${!header_arguments[@]}"; do
-    echo "   $i: ${header_arguments[$i]}";
-done
-echo "HOST: ${host}"
-echo "OPERATION: ${operation}"
-echo "BODY:"
-for i in "${!body_parameters[@]}"; do
-    echo "   $i: ${body_parameters[$i]}";
-done
-
 # Check if user provided host name
-if [[ -z "$PETSTORE_HOST" && -z "$host" ]]; then
+if [[ -z "$host" ]]; then
     echo "No hostname provided!!!"
+    echo -e "Check usage: '${script_name} --help'"
+    echo -e ""
     exit 1
 fi
 
 # Check if user specified operation ID
 if [[ -z "$operation" ]]; then
-    echo "No operation specified!!!"
+    echo -e ""
+    echo -e "No operation specified!"
+    echo -e "Check available operations: '${script_name} --help'"
+    echo -e ""
     exit 1
 fi
 
