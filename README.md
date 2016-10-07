@@ -28,7 +28,18 @@ $ java -cp target/bash-swagger-codegen-1.0.0-jar-with-dependencies.jar io.swagge
 $ chmod +x output/client.sh
 ```
 
+Client generator takes several specific configuration options:
+* *processMarkdown* - [boolean] if set to `true`, all text (descriptions) in the Swagger specification will be treated as Markdown and converted to terminal formatting commands,
+* *curlOptions* - [string] a list of default cURL options that will be added to each command
 
+These options can be specified in a Json file used when running the codegen, for example:
+```json
+{
+  "processMarkdown": true,
+  "curlOptions": "-ksS --tlsv1.2"
+}
+
+```
 ### Using the generated Bash script
 
 ```shell

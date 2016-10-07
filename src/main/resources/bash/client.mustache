@@ -53,7 +53,7 @@ declare -A body_parameters
 
 ## 
 # These arguments will be directly passed to cURL 
-curl_arguments=""
+curl_arguments="{{curl-codegen-options}}"
 
 ##
 # The host for making the request
@@ -164,9 +164,9 @@ function print_help {
     echo ""
     echo -e "$(tput bold)Usage:$(tput sgr0)"
     echo -e ""
-    echo -e "  $ ./${script_name} [CURL_OPTIONS] [--host HOST] OPERATION [HEADERS] [PARAMETERS]"
+    echo -e "  $ ./${script_name} [CURL_OPTIONS] [--host HOST] [--dry-run] OPERATION [HEADERS] [PARAMETERS]"
     echo ""
-    echo -e "  $ cat body_content.json | ./${script_name} [--host HOST] [CURL_OPTIONS] OPERATION [PARAMETERS]"
+    echo -e "  $ cat FILE | ./${script_name} [CURL_OPTIONS] [--host HOST] [--dry-run] OPERATION [HEADERS] [PARAMETERS]"
     echo ""
     echo -e "  CURL_OPTIONS - any valid cURL options can be passed before OPERATION"
     echo -e "  HEADERS - HTTP headers can be passed in the form HEADER:VALUE"

@@ -21,11 +21,12 @@ import java.io.File;
 
 public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
 
-  // source folder where to write the files
-  //protected String sourceFolder = "src";
   protected String apiVersion = "1.0.0";
 
+  protected boolean processMarkdown = false;
+
   public static final String CURL_OPTIONS = "curlOptions";
+  public static final String PROCESS_MARKDOWN = "processMarkdown";
 
   /**
    * Configures the type of generator.
@@ -71,12 +72,14 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
      */
     modelTemplateFiles.clear();
 
+
     /**
      * Api classes.  You can write classes for each Api file with the 
      * apiTemplateFiles map. As with models, add multiple entries with 
      * different extensions for multiple files per class.
      */
     apiTemplateFiles.clear();
+
 
     /**
      * Template Location. This is the location which templates will be read 
@@ -85,16 +88,18 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
      */
     templateDir = "bash";
 
+
     /**
      * Allow the user to force the script to always include certain cURL
      * comamnds
      */
-    cliOptions.clear();
-    cliOptions.add(new CliOption(CURL_OPTIONS, "Default cURL options"));
+    cliOptions.add(CliOption.newString(CURL_OPTIONS, "Default cURL options"));
+    cliOptions.add(CliOption.newBoolean(PROCESS_MARKDOWN, 
+                      "Convert all Markdown Markup into terminal formatting"));
+
 
     /**
-     * Reserved words.  Override this with reserved words specific to your 
-     * language
+     * Bash reserved words.
      */
     reservedWords = new HashSet<String> (
       Arrays.asList(
@@ -171,9 +176,13 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
 
       if (additionalProperties.containsKey(CURL_OPTIONS)) {
           curlopts = additionalProperties.get(CURL_OPTIONS).toString();
+          additionalProperties.put("curl-codegen-options", curlopts);
       }
 
-      additionalProperties.put("curl-codegen-options", curlopts);
+      if (additionalProperties.containsKey(PROCESS_MARKDOWN)) {
+        this.processMarkdown = true;
+      }
+      
   }
 
   /**
@@ -205,10 +214,6 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
     return outputFolder;
   }
 
-  // override with any special handling of the entire swagger spec
-  @SuppressWarnings("unused")
-  public void processSwagger(Swagger swagger) {
-  }
 
   /**
    * Optional - type declaration. This is a String which is used by the 
@@ -279,30 +284,66 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
 
   }
 
-  // override with any special text escaping logic
+  /**
+   * Override with any special text escaping logic
+   */ 
   @SuppressWarnings("static-method")
   public String escapeText(String input) {
       if (input == null) {
           return input;
       }
 
-      // replace \ with \\
-      // replace " with \"
-      // outter unescape to retain the original multi-byte characters
+      /**
+       * replace \ with \
+       *
+       * replace " with \"
+       * outter unescape to retain the original multi-byte characters
+       */
       String result = escapeUnsafeCharacters(
         StringEscapeUtils.unescapeJava(
           StringEscapeUtils.escapeJava(input).replace("\\/", "/"))
-                     //.replaceAll("[\\t\\n\\r]"," ")
                      .replace("\\", "\\\\")
                      .replace("\"", "\\\""));
 
-      // Convert markdown **Bold text** to bash bold control sequences
-      // result = result.replaceAll("(^|\\s)\\*{2}([\\w\\d ]+)\\*{2}($|\\s)", 
-      //                   "\\$(tput bold)$1\\$(tput sgr0)");
+      if(this.processMarkdown) {
 
-      // Convert all markdown section headers \todo
-      // result.replaceAll("\*\n##"
-      //                   "\$\(tput bold\)$1\$\(tput sgr0\)")
+        /**
+         * Convert markdown strong **Bold text**  and __Bold text__
+         * to bash bold control sequences (tput bold)
+         */
+        result = result.replaceAll("(?m)(^|\\s)\\*{2}([\\w\\d ]+)\\*{2}($|\\s)", 
+                                   "\\$\\(tput bold\\) $2 \\$\\(tput sgr0\\)");
+        result = result.replaceAll("(?m)(^|\\s)_{2}([\\w\\d ]+)_{2}($|\\s)", 
+                                   "\\$\\(tput bold\\) $2 \\$\\(tput sgr0\\)");
+        
+        /**
+         * Convert markdown *Italics text* and _Italics text_ to bash dim 
+         * control sequences (tput dim)
+         */
+        result = result.replaceAll("(?m)(^|\\s)\\*{1}([\\w\\d ]+)\\*{1}($|\\s)", 
+                                   "\\$\\(tput dim\\) $2 \\$\\(tput sgr0\\)");
+        result = result.replaceAll("(?m)(^|\\s)_{1}([\\w\\d ]+)_{1}($|\\s)", 
+                                   "\\$\\(tput dim\\) $2 \\$\\(tput sgr0\\)");
+
+
+        /**
+         * Convert all markdown section 1 level headers with bold
+         */ 
+        result.replaceAll("(?m)^\\#\\s+(.+)$",
+                          "\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
+
+        /**
+         * Convert all markdown section 2 level headers with bold
+         */ 
+        result.replaceAll("(?m)^\\#\\#\\s+(.+)$",
+                          "\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
+
+        /**
+         * Convert all markdown section 3 level headers with bold
+         */ 
+        result.replaceAll("(?m)^\\#\\#\\#\\s+(.+)$",
+                          "\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
+      }
 
       return result;
   }
@@ -313,17 +354,21 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
   }
   
   /**
-   * override with any special text escaping logic to handle unsafe
-   * characters so as to avoid code injection
+   * Override with any special text escaping logic to handle unsafe
+   * characters so as to avoid code injection.
+   * 
    * @param input String to be cleaned up
    * @return string with unsafe characters removed or escaped
    */
   public String escapeUnsafeCharacters(String input) {
-      // doing nothing by default and code generator should implement
-      // the logic to prevent code injection
-      // later we'll make this method abstract to make sure
-      // code generator implements this method
-      return input.replaceAll("`", "'");
+
+    /**
+     * Replace backticks to normal single quotes.
+     */
+    String result = input.replaceAll("`", "'");
+
+    return result;
+  
   }
 
 
@@ -349,5 +394,17 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
 
   }
 
+  /**
+   * Preprocess original properties from the Swagger definition where necessary.
+   * 
+   * @param swagger [description]
+   */
+  @Override
+  public void preprocessSwagger(Swagger swagger) {
+      super.preprocessSwagger(swagger);
+      if ("/".equals(swagger.getBasePath())) {
+          swagger.setBasePath("");
+      }
+  }
 
 }
