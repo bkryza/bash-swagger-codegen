@@ -1,0 +1,172 @@
+# {{scriptName}} completion                               -*- shell-script -*-
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !
+# ! Note:
+# !
+# ! THIS SCRIPT HAS BEEN AUTOMATICALLY GENERATED USING 
+# ! swagger-codegen-bash (github.com/bkryza/swagger-codegen-bash) 
+# ! FROM SWAGGER SPECIFICATION IN JSON.
+# !
+# ! Generated on: {{generatedDate}}
+# !
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+_{{scriptName}}()
+{
+    local cur
+    local prev
+    local words
+    local cword
+
+    words="${COMP_WORDS}"
+    cword="${COMP_CWORD}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    
+    # The reference of currently selected REST operation
+    local operation=""
+
+    # The list of available operation in the REST service
+    # It's modelled as an associative array for efficient key lookup
+    declare -A operations
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+    operations["{{operationId}}"]=1
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+    # An associative array of operations to their parameters
+    # Only include path, query and header parameters
+    declare -A operation_parameters
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+    operation_parameters["{{operationId}}"]=({{#allParams}}{{^isBodyParam}}{{baseName}} {{/isBodyParam}}{{/allParams}})
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}   
+
+    _init_completion || return
+
+    # Check if operation is already in the command line provided
+    for word in words; do
+        if [[ operations[word] ]]; then
+            operation="${word}"
+        fi
+    done
+
+    case $prev in
+        --dry-run)
+            return
+            ;;
+        --ciphers|--connect-timeout|-C|--continue-at|-F|--form|--form-string|\
+        --ftp-account|--ftp-alternative-to-user|-P|--ftp-port|-H|--header|-h|\
+        --help|--hostpubmd5|--keepalive-time|--krb|--limit-rate|--local-port|\
+        --mail-from|--mail-rcpt|--max-filesize|--max-redirs|-m|--max-time|\
+        --pass|--proto|--proto-redir|--proxy-user|--proxy1.0|-Q|--quote|-r|\
+        --range|-X|--request|--retry|--retry-delay|--retry-max-time|\
+        --socks5-gssapi-service|-t|--telnet-option|--tftp-blksize|-z|\
+        --time-cond|--url|-u|--user|-A|--user-agent|-V|--version|-w|\
+        --write-out|--resolve|--tlsuser|--tlspassword)
+            return
+            ;;
+        -K|--config|-b|--cookie|-c|--cookie-jar|-D|--dump-header|--egd-file|\
+        --key|--libcurl|-o|--output|--random-file|-T|--upload-file|--trace|\
+        --trace-ascii|--netrc-file)
+            _filedir
+            return
+            ;;
+        --cacert|-E|--cert)
+            _filedir '@(c?(e)rt|cer|pem|der)'
+            return
+            ;;
+        --capath)
+            _filedir -d
+            return
+            ;;
+        --cert-type|--key-type)
+            COMPREPLY=( $( compgen -W 'DER PEM ENG' -- "$cur" ) )
+            return
+            ;;
+        --crlfile)
+            _filedir crl
+            return
+            ;;
+        -d|--data|--data-ascii|--data-binary|--data-urlencode)
+            if [[ $cur == \@* ]]; then
+                cur=${cur:1}
+                _filedir
+                COMPREPLY=( "${COMPREPLY[@]/#/@}" )
+            fi
+            return
+            ;;
+        --delegation)
+            COMPREPLY=( $( compgen -W 'none policy always' -- "$cur" ) )
+            return
+            ;;
+        --engine)
+            COMPREPLY=( $( compgen -W 'list' -- "$cur" ) )
+            return
+            ;;
+        --ftp-method)
+            COMPREPLY=( $( compgen -W 'multicwd nocwd singlecwd' -- "$cur" ) )
+            return
+            ;;
+        --ftp-ssl-ccc-mode)
+            COMPREPLY=( $( compgen -W 'active passive' -- "$cur" ) )
+            return
+            ;;
+        --interface)
+            _available_interfaces -a
+            return
+            ;;
+        -x|--proxy|--socks4|--socks4a|--socks5|--socks5-hostname)
+            _known_hosts_real
+            return
+            ;;
+        --pubkey)
+            _filedir pub
+            return
+            ;;
+        --stderr)
+            COMPREPLY=( $( compgen -W '-' -- "$cur" ) )
+            _filedir
+            return
+            ;;
+        --tlsauthtype)
+            COMPREPLY=( $( compgen -W 'SRP' -- "$cur" ) )
+            return
+            ;;
+    esac
+
+    if [[ $cur == -* ]]; then
+        COMPREPLY=( $( compgen -W '$( _parse_help "$1" )' -- "$cur" ) )
+    fi
+
+    #
+    # If the argument starts with a letter this could be either an operation
+    # or an operation parameter
+    #
+    if [[ $cur =~ ^[A-Za-z]+$ ]]; then
+        # If operation has not been yet selected, suggest the list of operations
+        # otherwise suggest arguments of this operation as declared in the 
+        # Swagger specification
+        if [[ -z $operation ]]; then
+            COMPREPLY=( $(compgen -W ""${!operations[@]}"" -- ${cur}) )
+        else
+            COMPREPLY=( $(compgen -W "${operation_parameters[$operation]}" -- ${cur}) )
+        fi
+    fi
+
+} &&
+complete -F _{{scriptName}} {{scriptName}}
+
+# ex: ts=4 sw=4 et filetype=sh

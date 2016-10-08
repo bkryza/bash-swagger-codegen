@@ -1,0 +1,6 @@
+{
+  "processMarkdown": true,
+  "curlOptions": "-ksS --tlsv1.2",
+  "scriptName": "petstore-cli",
+  "generateBashCompletion": true
+}

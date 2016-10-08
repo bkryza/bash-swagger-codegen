@@ -24,10 +24,13 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
   protected String apiVersion = "1.0.0";
 
   protected boolean processMarkdown = false;
+  protected String scriptName = "client.sh";
+  protected boolean generateBashCompletion = false;
 
   public static final String CURL_OPTIONS = "curlOptions";
   public static final String PROCESS_MARKDOWN = "processMarkdown";
-
+  public static final String SCRIPT_NAME = "scriptName";
+  public static final String GENERATE_BASH_COMPLETION = "generateBashCompletion";
   /**
    * Configures the type of generator.
    * 
@@ -96,8 +99,11 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
     cliOptions.add(CliOption.newString(CURL_OPTIONS, "Default cURL options"));
     cliOptions.add(CliOption.newBoolean(PROCESS_MARKDOWN, 
                       "Convert all Markdown Markup into terminal formatting"));
-
-
+    cliOptions.add(CliOption.newString(SCRIPT_NAME, 
+                      "The name of the script that will be generated "+
+                      "(e.g. petstore-cli)"));
+    cliOptions.add(CliOption.newBoolean(GENERATE_BASH_COMPLETION, 
+                      "Whether to generate the Bash completion script"));
     /**
      * Bash reserved words.
      */
@@ -153,19 +159,15 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
      * `.mustache it will be processed by the template engine.  Otherwise, 
      * it will be copied
      */
+    supportingFiles.add(new SupportingFile("client.mustache",  "", scriptName));
     supportingFiles.add(new SupportingFile(
-      "client.mustache",   // the input template or file
-      "",                  // the destination folder, relative `outputFolder`
-      "client.sh")         // the output file
-    );
+             "bash-completion.mustache", "", scriptName+".bash-completion"));
 
     /**
      * Language Specific Primitives.  These types will not trigger imports by
      * the client generator
      */
-    languageSpecificPrimitives = new HashSet<String>(
-      //Arrays.asList()
-    );
+    languageSpecificPrimitives = new HashSet<String>();
   }
 
 
@@ -182,7 +184,15 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
       if (additionalProperties.containsKey(PROCESS_MARKDOWN)) {
         this.processMarkdown = true;
       }
-      
+  
+      if (additionalProperties.containsKey(GENERATE_BASH_COMPLETION)) {
+        this.generateBashCompletion = true;
+      }
+
+      if (additionalProperties.containsKey(SCRIPT_NAME)) {
+          scriptName = additionalProperties.get(CURL_OPTIONS).toString(); 
+      }
+      additionalProperties.put("script-codegen-name", scriptName);
   }
 
   /**
