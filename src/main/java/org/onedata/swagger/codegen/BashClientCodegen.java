@@ -373,7 +373,7 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
   public String escapeUnsafeCharacters(String input) {
 
     /**
-     * Replace backticks to normal single quotes.
+     * Replace backticks with normal single quotes.
      */
     String result = input.replaceAll("`", "'");
 

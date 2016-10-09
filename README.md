@@ -23,7 +23,7 @@ $ mvn assembly:assembly -DdescriptorId=jar-with-dependencies
 
 Generate the client:
 ```shell
-$ java -cp target/bash-swagger-codegen-1.0.0-jar-with-dependencies.jar io.swagger.codegen.SwaggerCodegen generate -l bash -i http://petstore.swagger.io/v2/swagger.json -o output
+$ java -cp target/bash-swagger-codegen-1.0.0.jar io.swagger.codegen.SwaggerCodegen generate -l bash -i http://petstore.swagger.io/v2/swagger.json -o output
 
 $ chmod +x output/client.sh
 ```
