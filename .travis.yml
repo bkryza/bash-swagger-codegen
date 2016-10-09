@@ -1,0 +1,27 @@
+language: java
+
+cache:
+  directories:
+  - $HOME/.m2
+
+services:
+  - docker
+
+addons:
+  hosts:
+    - petstore.swagger.io
+
+before_install:
+  # to run petstore server locally via docker
+  - docker pull swaggerapi/petstore
+  - docker run -d -e SWAGGER_HOST=http://petstore.swagger.io -e SWAGGER_BASE_PATH=/v2 -p 80:8080 swaggerapi/petstore
+  - docker ps -a
+  # show host table to confirm petstore.swagger.io is mapped to localhost
+  - cat /etc/hosts
+
+
+script:
+    - mvn assembly:assembly -DdescriptorId=jar-with-dependencies
+    - java -cp target/bash-swagger-codegen-1.0.0.jar io.swagger.codegen.SwaggerCodegen generate -l bash -i http://petstore.swagger.io/v2/swagger.json -o output -c resources/example-config.json
+    - bash tests/petstore_test.sh
+    

@@ -69,8 +69,58 @@ print_curl=false
 operation=""
 
 ##
+# The provided Accept header value
+header_accept=""
+
+##
+# The provided Content-type header value
+header_content_type=""
+
+##
 # If there is any body content on the stdin pass it to the body of the request
 body_content_temp_file=""
+
+##
+# Declare some mime types abbreviations for easier content-type and accepts
+# headers specification
+declare -A mime_type_abbreviations
+# text/*
+mime_type_abbreviations["text"]="text/plain"
+mime_type_abbreviations["html"]="text/html"
+mime_type_abbreviations["md"]="text/x-markdown"
+mime_type_abbreviations["csv"]="text/csv"
+mime_type_abbreviations["css"]="text/css"
+mime_type_abbreviations["rtf"]="text/rtf"
+# application/*
+mime_type_abbreviations["json"]="application/json"
+mime_type_abbreviations["xml"]="application/xml"
+mime_type_abbreviations["yaml"]="application/yaml"
+mime_type_abbreviations["js"]="application/javascript"
+mime_type_abbreviations["bin"]="application/octet-stream"
+mime_type_abbreviations["rdf"]="application/rdf+xml"
+# image/*
+mime_type_abbreviations["jpg"]="image/jpeg"
+mime_type_abbreviations["png"]="image/png"
+mime_type_abbreviations["gif"]="image/gif"
+mime_type_abbreviations["bmp"]="image/bmp"
+mime_type_abbreviations["tiff"]="image/tiff"
+
+
+##############################################################################
+#
+# Lookup the mime type abbreviation in the mime_type_abbreviations array.
+# If not present assume the user provided a valid mime type
+#
+##############################################################################
+function lookup_mime_type {
+    local mime_type=$1
+
+    if [[ ${mime_type_abbreviations[$mime_type]} ]]; then
+        echo ${mime_type_abbreviations[$mime_type]}
+    else
+        echo $1
+    fi
+}
 
 ##############################################################################
 #
@@ -176,7 +226,7 @@ function print_help {
     echo -e "    * KEY+=VALUE - body parameters which will be added to body Json as '{ \"KEY\": VALUE }'"
     echo ""
 {{#hasAuthMethods}}
-    echo -e "$(tput bold)Authentication options$(tput sgr0)"
+    echo -e "$(tput bold)Authentication methods$(tput sgr0)"
     echo -e ""
 {{#authMethods}}
 {{#isBasic}}
@@ -212,10 +262,13 @@ echo "  $ops" | column -t -s ';'
 {{/apiInfo}}
     echo ""
     echo -e "$(tput bold)Options$(tput sgr0)"
-    echo -e "  -h,--help\tPrint this help"
-    echo -e "  -V,--version\tPrint API version"
-    echo -e "  --about\tPrint the information about service"
-    echo -e "  --dry-run\tPrint out the cURL command without executing it"
+    echo -e "  -h,--help\t\tPrint this help"
+    echo -e "  -V,--version\t\tPrint API version"
+    echo -e "  --about\t\tPrint the information about service"
+    echo -e "  --host URL\tSpecify the host URL (e.g. 'https://{{#swagger}}{{host}}{{/swagger}}')"
+    echo -e "  --dry-run\t\tPrint out the cURL command without executing it"
+    echo -e "  -ac,--accept MIME_TYPE\tSet the accept header in the request"
+    echo -e "  -ct,--content-type MIME_TYPE\tSet the content-type header in the request"
     echo ""
 }
 
@@ -312,24 +365,54 @@ function call_{{operationId}} {
     local path_parameter_names=({{#pathParams}}{{baseName}}{{/pathParams}})
     local query_parameter_names=({{#queryParams}}{{baseName}}{{/queryParams}})
 
-
     local path=$(build_request_path "{{basePathWithoutHost}}{{path}}" path_parameter_names query_parameter_names)
-
     local method="{{httpMethod}}"
-
-
     local headers_curl=$(header_arguments_to_curl)
-
-
 
 {{#hasBodyParam}}
     local body_json_curl=""
 
     #
+    # Check if the user provided 'Content-type' headers in the 
+    # command line. If not try to set them based on the Swagger specification
+    # if values produces and consumes are defined unambigously
+    #
+{{#hasConsumes}}
+{{#consumes}}
+{{#-first}}
+{{^hasMore}}
+    if [[ -z $header_content_type ]]; then
+        header_content_type="{{mediaType}}"
+    fi
+{{/hasMore}}
+{{/-first}}
+{{/consumes}}
+{{/hasConsumes}}
+
+{{#hasConsumes}}
+    if [[ -z $header_content_type ]]; then
+        echo "Error: Request's content-type not specified!!!"
+        echo "This operation expects content-type in one of the following formats:"
+{{#consumes}}
+        echo -e "\t- {{mediaType}}"
+{{/consumes}}
+        echo ""
+        echo "Use '--content-type' to set proper content type"
+        exit 1
+    else
+        headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
+    fi
+{{/hasConsumes}}
+
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
+
+    #
     # If we have received some body content over pipe, pass it from the
     # temporary file to cURL
     #
-    if [[ ! -z $body_content_temp_file ]]; then
+    if [[ -n $body_content_temp_file ]]; then
         if [[ "$print_curl" = true ]]; then
             echo "cat ${body_content_temp_file} | curl ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
         else
@@ -340,11 +423,11 @@ function call_{{operationId}} {
     # If not, try to build the content body from arguments KEY:=VALUE and KEY+=VALUE
     #
     else
-        body_json_curl = $(body_parameters_to_json)
+        body_json_curl=$(body_parameters_to_json)
         if [[ "$print_curl" = true ]]; then
-            echo "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\" -d @-"
+            echo "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
         else
-            eval "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\" -d @-"
+            eval "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
         fi
     fi
 {{/hasBodyParam}}
@@ -392,10 +475,26 @@ fi
 # Pass all arguemnts before 'operation' to cURL except the ones we override
 #
 take_host=false
+take_accept_header=false
+take_contenttype_header=false
+
 for key in "$@"; do
+# Take the value of --host argument
 if [[ "$take_host" = true ]]; then
     host="$key"
     take_host=false
+    continue
+fi
+# Take the value of --accept argument
+if [[ "$take_accept_header" = true ]]; then
+    header_accept=$(lookup_mime_type "$key")
+    take_accept_header=false
+    continue
+fi
+# Take the value of --content-type argument
+if [[ "$take_contenttype_header" = true ]]; then
+    header_content_type=$(lookup_mime_type "$key")
+    take_contenttype_header=false
     continue
 fi
 case $key in
@@ -419,9 +518,15 @@ case $key in
     --host)
     take_host=true
     ;;
+    -ac|--accept)
+    take_accept_header=true
+    ;;
+    -ct|--content-type)
+    take_contenttype_header=true
+    ;;    
     --dry-run)
     print_curl=true
-    ;;
+    ;;   
 {{#apiInfo}}
 {{#apis}}
 {{#operations}}
@@ -487,7 +592,7 @@ done
 
 # Check if user provided host name
 if [[ -z "$host" ]]; then
-    echo "No hostname provided!!!"
+    echo "Error: No hostname provided!!!"
     echo -e "Check usage: '${script_name} --help'"
     echo -e ""
     exit 1
