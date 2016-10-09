@@ -215,7 +215,7 @@ $(tput bold){{appName}} command line client (API version {{#swagger}}{{#info}}{{
 
 $(tput bold)Usage$(tput sgr0)
 
-$ ${script_name} [-h|--help] [-V|--version] [--about] [<curl-options>]
+  ${script_name} [-h|--help] [-V|--version] [--about] [<curl-options>]
            --host <url> [--dry-run] <operation> [-h|--help] [<headers>] 
            [<parameters>]
 
@@ -223,11 +223,11 @@ $ ${script_name} [-h|--help] [-V|--version] [--about] [<curl-options>]
   - <headers> - HTTP headers can be passed in the form HEADER:VALUE
   - <parameters> - REST operation parameters can be passed in the following 
                    forms:
-                     * KEY=VALUE - path or query parameters
-                     * KEY:=VALUE - body parameters which will be added to body 
-                                    Json as '{ \"KEY\": \"VALUE\" }'
-                     * KEY+=VALUE - body parameters which will be added to body 
-                                    Json as '{ \"KEY\": VALUE }'
+                    * KEY=VALUE - path or query parameters
+                    * KEY:=VALUE - body parameters which will be added to body 
+                                   Json as '{ \"KEY\": \"VALUE\" }'
+                    * KEY+=VALUE - body parameters which will be added to body 
+                                   Json as '{ \"KEY\": VALUE }'
 
 EOF
 {{#hasAuthMethods}}
@@ -250,7 +250,7 @@ EOF
 {{/authMethods}}
     echo ""
 {{/hasAuthMethods}}
-    echo -e "$(tput bold)Operations$(tput sgr0)"
+    echo -e "$(tput bold)Operations (grouped by tags)$(tput sgr0)"
 {{#apiInfo}}
 {{#apis}}
     echo ""
@@ -342,7 +342,7 @@ function print_{{operationId}}_help {
     echo ""
 {{/hasConsumes}}
 {{#bodyParams}}
-    echo -e "  {{{description}}}{{#required}} (required){{/required}}"
+    echo -e "  {{{description}}}{{#required}} (required){{/required}}" | fold -sw 80
 {{/bodyParams}}
     echo -e ""
 {{#bodyParams}}
@@ -376,6 +376,9 @@ function call_{{operationId}} {
     local path=$(build_request_path "{{basePathWithoutHost}}{{path}}" path_parameter_names query_parameter_names)
     local method="{{httpMethod}}"
     local headers_curl=$(header_arguments_to_curl)
+    if [[ -n $header_accept ]]; then
+        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
+    fi
 
 {{#hasBodyParam}}
     local body_json_curl=""
@@ -411,10 +414,6 @@ function call_{{operationId}} {
         headers_curl="${headers_curl} -H 'Content-type: ${header_content_type}'"
     fi
 {{/hasConsumes}}
-
-    if [[ -n $header_accept ]]; then
-        headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
-    fi
 
     #
     # If we have received some body content over pipe, pass it from the

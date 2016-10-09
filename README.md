@@ -13,7 +13,6 @@ For more information about Swagger™ check out [OpenAPI-Spec](https://github.co
 - Generation of Bash completion script
 - All valid cURL options can be used directly
 - Preview of cURL commands to execute each operation using `--dry-run` option
-- 
 
 ## Usage
 
@@ -165,8 +164,21 @@ source output/petstore-cli.bash-completion
 Alternatively, the script can be copied to the `/etc/bash-completion.d` (or on OSX with Homebrew to `/usr/local/etc/bash-completion.d`):
 
 ```shell
-sudo cp /output/petstore-cli.bash-completion etc/bash-completion.d/petstore-cli
+sudo cp /output/petstore-cli.bash-completion /etc/bash-completion.d/petstore-cli
 ```
+
+### OS X
+On OSX you might need to install bash-completion using Homebrew:
+```shell
+brew install bash-completion
+```
+and add the following to the `~/.bashrc`:
+
+```shell
+if [ -f $(brew --prefix)/etc/bash_completion ]; then
+  . $(brew --prefix)/etc/bash_completion
+fi
+``` 
 
 ## TODO
 - [ ] Add checking if all required parameters are provided
@@ -177,7 +189,8 @@ sudo cp /output/petstore-cli.bash-completion etc/bash-completion.d/petstore-cli
 - [x] Add abbreviated form support for standard headers (Accept, Content-type, X-Auth-Token, ...)
 - [ ] Add proper checking for Bash version and cURL availability
 - [ ] Improve `--help` and `--about` formatting
-- [ ] Describe bash-completion setup in Zsh
+- [ ] Add Zsh completion generation 
+- [ ] Add support to bash 4.0-4.2 (currently must be >= 4.3)
 
 ## LICENSE
 Copyright 2016 Bartosz Kryza <bkryza@gmail.com>
