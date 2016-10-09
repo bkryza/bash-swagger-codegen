@@ -209,43 +209,48 @@ function build_request_path {
 # 
 ###############################################################################
 function print_help {
-    echo ""
-    echo -e "$(tput bold){{appName}} command line client (API version {{#swagger}}{{#info}}{{version}}{{/info}}{{/swagger}})$(tput sgr0)"
-    echo ""
-    echo -e "$(tput bold)Usage:$(tput sgr0)"
-    echo -e ""
-    echo -e "  $ ./${script_name} [CURL_OPTIONS] [--host HOST] [--dry-run] OPERATION [HEADERS] [PARAMETERS]"
-    echo ""
-    echo -e "  $ cat FILE | ./${script_name} [CURL_OPTIONS] [--host HOST] [--dry-run] OPERATION [HEADERS] [PARAMETERS]"
-    echo ""
-    echo -e "  CURL_OPTIONS - any valid cURL options can be passed before OPERATION"
-    echo -e "  HEADERS - HTTP headers can be passed in the form HEADER:VALUE"
-    echo -e "  PARAMETERS - REST operation parameters can be passed in the following forms:"
-    echo -e "    * KEY=VALUE - path or query parameters"
-    echo -e "    * KEY:=VALUE - body parameters which will be added to body Json as '{ \"KEY\": \"VALUE\" }'"
-    echo -e "    * KEY+=VALUE - body parameters which will be added to body Json as '{ \"KEY\": VALUE }'"
-    echo ""
+cat <<EOF
+
+$(tput bold){{appName}} command line client (API version {{#swagger}}{{#info}}{{version}}{{/info}}{{/swagger}})$(tput sgr0)
+
+$(tput bold)Usage$(tput sgr0)
+
+$ ${script_name} [-h|--help] [-V|--version] [--about] [<curl-options>]
+           --host <url> [--dry-run] <operation> [-h|--help] [<headers>] 
+           [<parameters>]
+
+  - <curl-options> - any valid cURL options can be passed before <operation>
+  - <headers> - HTTP headers can be passed in the form HEADER:VALUE
+  - <parameters> - REST operation parameters can be passed in the following 
+                   forms:
+                     * KEY=VALUE - path or query parameters
+                     * KEY:=VALUE - body parameters which will be added to body 
+                                    Json as '{ \"KEY\": \"VALUE\" }'
+                     * KEY+=VALUE - body parameters which will be added to body 
+                                    Json as '{ \"KEY\": VALUE }'
+
+EOF
 {{#hasAuthMethods}}
     echo -e "$(tput bold)Authentication methods$(tput sgr0)"
     echo -e ""
 {{#authMethods}}
 {{#isBasic}}
-    echo -e "  - Basic AUTH (add '-u username:password' before OPERATION)"
+    echo -e "    - Basic AUTH (add '-u username:password' before <operation>)"
 {{/isBasic}}
 {{#isApiKey}}
-    echo -e "  - Api-key (add '{{keyParamName}}:ACCESS_KEY' after OPERATION)"
+    echo -e "    - Api-key (add '{{keyParamName}}:ACCESS_KEY' after <operation>)"
 {{/isApiKey}}
 {{#isOAuth}}
-    echo -e "  - OAuth (url: {{authorizationUrl}})"
-    echo -e "      scopes:"
+    echo -e "    - OAuth (url: {{authorizationUrl}})"
+    echo -e "        Scopes:"
 {{#scopes}}
-    echo -e "        * {{scope}} - {{description}}"
+    echo -e "          * {{scope}} - {{description}}"
 {{/scopes}}
 {{/isOAuth}}
 {{/authMethods}}
     echo ""
 {{/hasAuthMethods}}
-    echo -e "$(tput bold)Operations:$(tput sgr0)"
+    echo -e "$(tput bold)Operations$(tput sgr0)"
 {{#apiInfo}}
 {{#apis}}
     echo ""
@@ -262,13 +267,16 @@ echo "  $ops" | column -t -s ';'
 {{/apiInfo}}
     echo ""
     echo -e "$(tput bold)Options$(tput sgr0)"
-    echo -e "  -h,--help\t\tPrint this help"
-    echo -e "  -V,--version\t\tPrint API version"
-    echo -e "  --about\t\tPrint the information about service"
-    echo -e "  --host URL\tSpecify the host URL (e.g. 'https://{{#swagger}}{{host}}{{/swagger}}')"
-    echo -e "  --dry-run\t\tPrint out the cURL command without executing it"
-    echo -e "  -ac,--accept MIME_TYPE\tSet the accept header in the request"
-    echo -e "  -ct,--content-type MIME_TYPE\tSet the content-type header in the request"
+    echo -e "  -h,--help\t\t\t\tPrint this help"
+    echo -e "  -V,--version\t\t\t\tPrint API version"
+    echo -e "  --about\t\t\t\tPrint the information about service"
+    echo -e "  --host <url>\t\t\t\tSpecify the host URL (e.g. "
+    echo -e "              \t\t\t\t'https://{{#swagger}}{{host}}{{/swagger}}')"
+    echo -e "  --dry-run\t\t\t\tPrint out the cURL command without"
+    echo -e "           \t\t\t\texecuting it"
+    echo -e "  -ac,--accept <mime-type>\t\tSet the accept header in the request"
+    echo -e "  -ct,--content-type <mime-type>\tSet the content-type header in "
+    echo -e "                                \tthe request"
     echo ""
 }
 
@@ -285,7 +293,7 @@ function print_about {
 read -d '' appdescription <<EOF
 {{{appDescription}}}
 EOF
-echo "$appdescription"
+echo "$appdescription" | fold -sw 80
 }
 
 
