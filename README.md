@@ -191,6 +191,7 @@ fi
 - [ ] Improve `--help` and `--about` formatting
 - [ ] Add Zsh completion generation 
 - [ ] Add support to bash 4.0-4.2 (currently must be >= 4.3)
+- [ ] Add environment variables for authentication and hostname
 
 ## LICENSE
 Copyright 2016 Bartosz Kryza <bkryza@gmail.com>

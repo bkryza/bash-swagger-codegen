@@ -19,6 +19,16 @@ import java.util.Map;
 import java.util.*;
 import java.io.File;
 
+// import com.google.gson.Gson;
+// import com.google.gson.GsonBuilder;
+// import com.google.gson.JsonElement;
+// import com.google.gson.JsonParser;
+
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
 
   protected String apiVersion = "1.0.0";
@@ -319,6 +329,7 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
          */
         result = result.replaceAll("(?m)(^|\\s)\\*{2}([\\w\\d ]+)\\*{2}($|\\s)", 
                                    "\\$\\(tput bold\\) $2 \\$\\(tput sgr0\\)");
+
         result = result.replaceAll("(?m)(^|\\s)_{2}([\\w\\d ]+)_{2}($|\\s)", 
                                    "\\$\\(tput bold\\) $2 \\$\\(tput sgr0\\)");
         
@@ -328,6 +339,7 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
          */
         result = result.replaceAll("(?m)(^|\\s)\\*{1}([\\w\\d ]+)\\*{1}($|\\s)", 
                                    "\\$\\(tput dim\\) $2 \\$\\(tput sgr0\\)");
+
         result = result.replaceAll("(?m)(^|\\s)_{1}([\\w\\d ]+)_{1}($|\\s)", 
                                    "\\$\\(tput dim\\) $2 \\$\\(tput sgr0\\)");
 
@@ -335,20 +347,29 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
         /**
          * Convert all markdown section 1 level headers with bold
          */ 
-        result.replaceAll("(?m)^\\#\\s+(.+)$",
-                          "\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
+        result = result.replaceAll("(?m)^\\s*\\#\\s+(.+)$",
+                          "\n\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
 
         /**
          * Convert all markdown section 2 level headers with bold
          */ 
-        result.replaceAll("(?m)^\\#\\#\\s+(.+)$",
-                          "\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
+        result = result.replaceAll("(?m)^\\s*\\#\\#\\s+(.+)$",
+                          "\n\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
 
         /**
          * Convert all markdown section 3 level headers with bold
          */ 
-        result.replaceAll("(?m)^\\#\\#\\#\\s+(.+)$",
-                          "\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
+        result = result.replaceAll("(?m)^\\s*\\#\\#\\#\\s+(.+)$",
+                          "\n\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
+
+        /**
+         * Convert all markdown code blocks into --- delimited sections
+         */ 
+        result = result.replaceAll("(?m)\\s*```.*$",
+                          "\n---");
+
+        result = result.replaceAll("(?m)\\s*\\'\\'\\'.*$",
+                          "\n---");
       }
 
       return result;
@@ -389,10 +410,46 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
 
       for (CodegenParameter p : op.bodyParams) {
         if(p.dataType != null && definitions.get(p.dataType) != null) {
-          p.vendorExtensions.put(
-            "x-codegen-body-example", 
-              definitions.get(p.dataType).getExample()
-            ); 
+          /**
+           * If the operation produces Json and has nonempty example
+           * try to reformat it.
+           */
+          if(operation.getConsumes() != null
+            && operation.getConsumes().contains("application/json")
+            && definitions.get(p.dataType).getExample() != null) {
+
+              ObjectMapper mapper = new ObjectMapper();
+              // Object ex = mapper.readValue(
+              //   definitions.get(p.dataType).getExample(), Object.class);
+              try {
+                p.vendorExtensions.put(
+                  "x-codegen-body-example",
+                  mapper.writerWithDefaultPrettyPrinter().writeValueAsString(
+                    definitions.get(p.dataType).getExample()));
+              }
+              catch(JsonProcessingException e) {
+                e.printStackTrace();
+              }
+            /*
+              Gson gson = new GsonBuilder().setPrettyPrinting().create();
+              JsonParser parser = new JsonParser();
+              JsonElement rootElement = parser.parse(
+                definitions.get(p.dataType).getExample()); 
+
+              p.vendorExtensions.put(
+                "x-codegen-body-example", gson.toJson(rootElement)); 
+            */
+
+          }
+          else {
+            /**
+             * Otherwise present whatever is provided as example
+             */
+            p.vendorExtensions.put(
+              "x-codegen-body-example", 
+                definitions.get(p.dataType).getExample()); 
+          
+          }
         }
       }
 

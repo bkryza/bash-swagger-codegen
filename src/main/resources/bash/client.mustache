@@ -319,40 +319,33 @@ function print_version {
 ##############################################################################
 function print_{{operationId}}_help {
     echo ""
-    echo -e "$(tput bold){{{appName}}}  command line client$(tput sgr0)"
-    echo ""
-    echo -e "$(tput bold){{operationId}}$(tput sgr0) - {{{summary}}}"
-    echo ""
+    echo -e "$(tput bold){{operationId}} - {{{summary}}}$(tput sgr0) "
+    echo -e "{{unescapedNotes}}" | fold -sw 80
+    echo -e ""
+{{#hasParams}}
     echo -e "$(tput bold)Parameters$(tput sgr0)"
 {{#pathParams}}
-    echo -e "  {{paramName}} [{{dataType}}] - {{{description}}}{{#required}} (required){{/required}}"
+    echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80
 {{/pathParams}}
 {{#queryParams}}
-    echo -e "  {{paramName}} [{{dataType}}] - {{{description}}}{{#required}} (required){{/required}}"
+    echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80
 {{/queryParams}}
 {{#headerParams}}
-    echo -e "  {{paramName}} [{{dataType}}] - {{{description}}}{{#required}} (required){{/required}}"
+    echo -e "  * {{paramName}} [{{dataType}}]{{{description}}}{{#required}} (required){{/required}} - " | fold -sw 80
 {{/headerParams}}
-{{#hasConsumes}}
-    echo ""
-    echo -e "$(tput bold)Accepts (in body)$(tput sgr0)"
-{{#consumes}}
-    echo -e "  - {{{mediaType}}}"
-{{/consumes}}
-    echo ""
-{{/hasConsumes}}
 {{#bodyParams}}
-    echo -e "  {{{description}}}{{#required}} (required){{/required}}" | fold -sw 80
+    echo -e "  * body [{{#consumes}}{{mediaType}}{{#hasMore}},{{/hasMore}}{{/consumes}}] {{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80
 {{/bodyParams}}
     echo -e ""
 {{#bodyParams}}
 {{#vendorExtensions}}
     echo -e "$(tput bold)Body content example$(tput sgr0)"
     echo -e ""
-    echo -e '{{{x-codegen-body-example}}}'
+    echo -e '{{{x-codegen-body-example}}}' | fold -sw 80
     echo -e ""
 {{/vendorExtensions}}
 {{/bodyParams}}
+{{/hasParams}}
 }
 {{/operation}}
 {{/operations}}
