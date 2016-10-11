@@ -19,11 +19,6 @@ import java.util.Map;
 import java.util.*;
 import java.io.File;
 
-// import com.google.gson.Gson;
-// import com.google.gson.GsonBuilder;
-// import com.google.gson.JsonElement;
-// import com.google.gson.JsonParser;
-
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonGenerationException;
@@ -40,7 +35,15 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
   public static final String CURL_OPTIONS = "curlOptions";
   public static final String PROCESS_MARKDOWN = "processMarkdown";
   public static final String SCRIPT_NAME = "scriptName";
-  public static final String GENERATE_BASH_COMPLETION = "generateBashCompletion";
+  public static final String 
+                           GENERATE_BASH_COMPLETION = "generateBashCompletion";
+  public static final String 
+                    HOST_ENVIRONMENT_VARIABLE_NAME = "hostEnvironmentVariable";
+  public static final String 
+         BASIC_AUTH_ENVIRONMENT_VARIABLE_NAME = "basicAuthEnvironmentVariable";
+  public static final String 
+       APIKEY_AUTH_ENVIRONMENT_VARIABLE_NAME = "apiKeyAuthEnvironmentVariable";
+
   /**
    * Configures the type of generator.
    * 
@@ -109,6 +112,16 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
                       "(e.g. petstore-cli)"));
     cliOptions.add(CliOption.newBoolean(GENERATE_BASH_COMPLETION, 
                       "Whether to generate the Bash completion script"));
+    cliOptions.add(CliOption.newString(HOST_ENVIRONMENT_VARIABLE_NAME, 
+                      "Name of environment variable where host can be defined "+
+                      "(e.g. PETSTORE_HOST='http://petstore.swagger.io:8080')"));
+    cliOptions.add(CliOption.newString(BASIC_AUTH_ENVIRONMENT_VARIABLE_NAME, 
+                      "Name of environment variable where username and password "
+                      +"can be defined (e.g. PETSTORE_CREDS='username:password')"));
+    cliOptions.add(CliOption.newBoolean(APIKEY_AUTH_ENVIRONMENT_VARIABLE_NAME, 
+                      "Name of environment variable where API key "
+                      +"can be defined (e.g. PETSTORE_APIKEY='kjhasdGASDa5asdASD')"));
+
     /**
      * Bash reserved words.
      */
@@ -172,7 +185,7 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
 
       if (additionalProperties.containsKey(CURL_OPTIONS)) {
           curlopts = additionalProperties.get(CURL_OPTIONS).toString();
-          additionalProperties.put("curl-codegen-options", curlopts);
+          additionalProperties.put("x-codegen-curl-options", curlopts);
       }
 
       if (additionalProperties.containsKey(PROCESS_MARKDOWN)) {
@@ -186,8 +199,25 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
       if (additionalProperties.containsKey(SCRIPT_NAME)) {
           scriptName = additionalProperties.get(SCRIPT_NAME).toString(); 
       }
-      additionalProperties.put("script-codegen-name", scriptName);
+      additionalProperties.put("x-codegen-script-name", scriptName);
 
+      if (additionalProperties.containsKey(HOST_ENVIRONMENT_VARIABLE_NAME)) {
+          String host_env 
+            = additionalProperties.get(HOST_ENVIRONMENT_VARIABLE_NAME).toString();
+          additionalProperties.put("x-codegen-host-env", host_env);
+      }
+
+      if (additionalProperties.containsKey(BASIC_AUTH_ENVIRONMENT_VARIABLE_NAME)) {
+          String basic_auth_credentials 
+            = additionalProperties.get(BASIC_AUTH_ENVIRONMENT_VARIABLE_NAME).toString();
+          additionalProperties.put("x-codegen-basicauth-env", basic_auth_credentials);
+      }
+
+      if (additionalProperties.containsKey(APIKEY_AUTH_ENVIRONMENT_VARIABLE_NAME)) {
+          String api_key 
+            = additionalProperties.get(APIKEY_AUTH_ENVIRONMENT_VARIABLE_NAME).toString();
+          additionalProperties.put("x-codegen-apikey-env", api_key);
+      }
       /**
        * Supporting Files.  You can write single files for the generator with 
        * the entire object tree available.  If the input file has a suffix of 
@@ -269,7 +299,7 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
     if(typeMapping.containsKey(swaggerType)) {
       type = typeMapping.get(swaggerType);
       if(languageSpecificPrimitives.contains(type))
-        return toModelName(type);
+        return type;
     }
     else
       type = swaggerType;
@@ -419,8 +449,6 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
             && definitions.get(p.dataType).getExample() != null) {
 
               ObjectMapper mapper = new ObjectMapper();
-              // Object ex = mapper.readValue(
-              //   definitions.get(p.dataType).getExample(), Object.class);
               try {
                 p.vendorExtensions.put(
                   "x-codegen-body-example",
@@ -430,16 +458,6 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
               catch(JsonProcessingException e) {
                 e.printStackTrace();
               }
-            /*
-              Gson gson = new GsonBuilder().setPrettyPrinting().create();
-              JsonParser parser = new JsonParser();
-              JsonElement rootElement = parser.parse(
-                definitions.get(p.dataType).getExample()); 
-
-              p.vendorExtensions.put(
-                "x-codegen-body-example", gson.toJson(rootElement)); 
-            */
-
           }
           else {
             /**

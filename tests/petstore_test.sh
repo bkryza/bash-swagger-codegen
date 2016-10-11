@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-PETSTORE_HOST=http://petstore.swagger.io
-PETSTORE_CLI=output/petstore-cli
+
+export PETSTORE_CLI=output/petstore-cli
 
 msg="addPet without host"
 
@@ -14,10 +14,11 @@ else
     echo "${msg}: PASSED"
 fi
 
+export PETSTORE_HOST=http://petstore.swagger.io
 
 msg="addPet without content type"
 
-result=$( bash $PETSTORE_CLI  -ac xml --host $PETSTORE_HOST addPet id+=123321 name:=lucky status:=available )
+result=$( bash $PETSTORE_CLI  -ac xml addPet id+=123321 name:=lucky status:=available )
 if [[ ! $result =~  "Error: Request's content-type not specified!" ]]; then
     echo "${msg}: FAILED"
     echo "Output: $result"
@@ -29,7 +30,7 @@ fi
 
 msg="Test addPet from parameters"
 
-result=$( bash $PETSTORE_CLI -ct json -ac xml --host $PETSTORE_HOST addPet id+=123321 name:=lucky status:=available )
+result=$( bash $PETSTORE_CLI -ct json -ac xml addPet id+=123321 name:=lucky status:=available )
 if [[ ! $result =~  "<id>123321</id>" ]]; then
     echo "${msg}: FAILED"
     echo "Output: $result"
@@ -41,7 +42,7 @@ fi
 
 msg="Test addPet from pipe"
 
-result=$( echo "{\"id\": 37567, \"name\": \"lucky\", \"status\": \"available\"}" | bash $PETSTORE_CLI -ct json -ac xml --host $PETSTORE_HOST addPet )
+result=$( echo "{\"id\": 37567, \"name\": \"lucky\", \"status\": \"available\"}" | bash $PETSTORE_CLI -ct json -ac xml addPet )
 if [[ ! $result =~  "<id>37567</id>" ]]; then
     echo "${msg}: FAILED"
     echo "Output: $result"

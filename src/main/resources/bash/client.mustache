@@ -53,11 +53,19 @@ declare -A body_parameters
 
 ## 
 # These arguments will be directly passed to cURL 
-curl_arguments="{{curl-codegen-options}}"
+curl_arguments="{{x-codegen-curl-options}}"
 
 ##
 # The host for making the request
-host=""
+host="{{#x-codegen-host-env}}${{x-codegen-host-env}}{{/x-codegen-host-env}}"
+
+##
+# The user credentials for basic authentication
+basic_auth_credential="{{#x-codegen-basicauth-env}}${{x-codegen-basicauth-env}}{{/x-codegen-basicauth-env}}"
+
+##
+# The user API key
+apikey_auth_credential="{{#x-codegen-apikey-env}}${{x-codegen-apikey-env}}{{/x-codegen-apikey-env}}"
 
 ##
 # If true, the script will only output the actual cURL command that would be 
@@ -130,10 +138,41 @@ function lookup_mime_type {
 ##############################################################################
 function header_arguments_to_curl {
     local headers_curl=""
+    local api_key_header=""
+    local api_key_header_in_cli=""
+{{#hasAuthMethods}}
+{{#authMethods}}
+{{#isApiKey}}
+{{#isKeyInHeader}}
+    api_key_header="{{keyParamName}}"
+{{/isKeyInHeader}}
+{{/isApiKey}}
+{{/authMethods}}
+{{/hasAuthMethods}}
+
     for key in "${!header_arguments[@]}"; do
-        headers_curl+="-H \"${key}: ${header_arguments[${key}]}\""
+        headers_curl+="-H \"${key}: ${header_arguments[${key}]}\" "
+        if [[ "${key}XX" == "${api_key_header}XX" ]]; then
+            api_key_header_in_cli="YES"
+        fi
     done
+{{#hasAuthMethods}}
+{{#authMethods}}
+{{#isApiKey}}
+{{#isKeyInHeader}}
+    #
+    # If the api_key was not provided in the header, try one from the
+    # environment variable
+    #
+    if [[ -z $api_key_header_in_cli ]]; then
+        headers_curl+="-H \"${api_key_header}: ${apikey_auth_credential}\""
+    fi
+{{/isKeyInHeader}}
+{{/isApiKey}}
+{{/authMethods}}
+{{/hasAuthMethods}}
     headers_curl+=" "
+
     echo "${headers_curl}"
 }
 
@@ -235,16 +274,25 @@ EOF
     echo -e ""
 {{#authMethods}}
 {{#isBasic}}
-    echo -e "    - Basic AUTH (add '-u username:password' before <operation>)"
+    echo -e "  - Basic AUTH - add '-u <username>:<password>' before <operation>"
+    {{#x-codegen-basicauth-env}}echo -e "                 or export {{x-codegen-basicauth-env}}='<username>:<password>'"{{/x-codegen-basicauth-env}}    
 {{/isBasic}}
 {{#isApiKey}}
-    echo -e "    - Api-key (add '{{keyParamName}}:ACCESS_KEY' after <operation>)"
+{{#isKeyInHeader}}
+    echo -e "  - Api-key - add '{{keyParamName}}:<access-key>' after <operation>"
+{{/isKeyInHeader}}
+{{#isKeyInQuery}}
+    echo -e "  - Api-key - add '{{keyParamName}}=<access-key>' after <operation>"
+{{/isKeyInQuery}}
+    {{#x-codegen-apikey-env}}echo -e "              or export {{x-codegen-apikey-env}}='<api-key>'"{{/x-codegen-apikey-env}}    
 {{/isApiKey}}
 {{#isOAuth}}
-    echo -e "    - OAuth (url: {{authorizationUrl}})"
-    echo -e "        Scopes:"
+    echo -e "  - OAuth2 (flow: {{flow}})"
+    echo -e "      Authorization URL: "
+    echo -e "        * {{authorizationUrl}}"
+    echo -e "      Scopes:"
 {{#scopes}}
-    echo -e "          * {{scope}} - {{description}}"
+    echo -e "        * {{scope}} - {{description}}"
 {{/scopes}}
 {{/isOAuth}}
 {{/authMethods}}
@@ -270,12 +318,15 @@ echo "  $ops" | column -t -s ';'
     echo -e "  -h,--help\t\t\t\tPrint this help"
     echo -e "  -V,--version\t\t\t\tPrint API version"
     echo -e "  --about\t\t\t\tPrint the information about service"
-    echo -e "  --host <url>\t\t\t\tSpecify the host URL (e.g. "
-    echo -e "              \t\t\t\t'https://{{#swagger}}{{host}}{{/swagger}}')"
+    echo -e "  --host <url>\t\t\t\tSpecify the host URL "
+{{#swagger}}
+{{#host}}echo -e "              \t\t\t\t(e.g. 'https://{{host}}')"{{/host}}
+{{^host}}echo -e "              \t\t\t\t(e.g. 'https://127.0.0.1:8080')"{{/host}}
+{{/swagger}}
     echo -e "  --dry-run\t\t\t\tPrint out the cURL command without"
     echo -e "           \t\t\t\texecuting it"
-    echo -e "  -ac,--accept <mime-type>\t\tSet the accept header in the request"
-    echo -e "  -ct,--content-type <mime-type>\tSet the content-type header in "
+    echo -e "  -ac,--accept <mime-type>\t\tSet the 'Accept' header in the request"
+    echo -e "  -ct,--content-type <mime-type>\tSet the 'Content-type' header in "
     echo -e "                                \tthe request"
     echo ""
 }
@@ -289,6 +340,9 @@ echo "  $ops" | column -t -s ';'
 function print_about {
     echo ""
     echo -e "$(tput bold){{appName}} command line client (API version {{#swagger}}{{#info}}{{version}}{{/info}}{{/swagger}})$(tput sgr0)"
+    echo ""
+    echo -e "License: {{#swagger}}{{#info}}{{#license}}{{name}}{{/license}}{{/info}}{{/swagger}}"
+    echo -e "Contact: {{#swagger}}{{#info}}{{#contact}}{{email}}{{/contact}}{{/info}}{{/swagger}}"
     echo ""
 read -d '' appdescription <<EOF
 {{{appDescription}}}
@@ -319,28 +373,28 @@ function print_version {
 ##############################################################################
 function print_{{operationId}}_help {
     echo ""
-    echo -e "$(tput bold){{operationId}} - {{{summary}}}$(tput sgr0) "
-    echo -e "{{unescapedNotes}}" | fold -sw 80
+    echo -e "$(tput bold){{operationId}} - {{{summary}}}$(tput sgr0)"
+    echo ""
+    echo -e "{{{notes}}}" | fold -sw 80
     echo -e ""
 {{#hasParams}}
     echo -e "$(tput bold)Parameters$(tput sgr0)"
 {{#pathParams}}
-    echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80
+    echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
 {{/pathParams}}
 {{#queryParams}}
-    echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80
+    echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
 {{/queryParams}}
 {{#headerParams}}
-    echo -e "  * {{paramName}} [{{dataType}}]{{{description}}}{{#required}} (required){{/required}} - " | fold -sw 80
+    echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
 {{/headerParams}}
 {{#bodyParams}}
-    echo -e "  * body [{{#consumes}}{{mediaType}}{{#hasMore}},{{/hasMore}}{{/consumes}}] {{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80
+    echo -e "  * body [{{#consumes}}{{mediaType}}{{#hasMore}},{{/hasMore}}{{/consumes}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
 {{/bodyParams}}
     echo -e ""
 {{#bodyParams}}
 {{#vendorExtensions}}
     echo -e "$(tput bold)Body content example$(tput sgr0)"
-    echo -e ""
     echo -e '{{{x-codegen-body-example}}}' | fold -sw 80
     echo -e ""
 {{/vendorExtensions}}
@@ -373,6 +427,10 @@ function call_{{operationId}} {
         headers_curl="${headers_curl} -H 'Accept: ${header_accept}'"
     fi
 
+    local basic_auth_option=""
+    if [[ -n $basic_auth_credential ]]; then
+        basic_auth_option="-u ${basic_auth_credential}"
+    fi
 {{#hasBodyParam}}
     local body_json_curl=""
 
@@ -414,9 +472,9 @@ function call_{{operationId}} {
     #
     if [[ -n $body_content_temp_file ]]; then
         if [[ "$print_curl" = true ]]; then
-            echo "cat ${body_content_temp_file} | curl ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
         else
-            eval "cat ${body_content_temp_file} | curl ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
         fi
         rm "${body_content_temp_file}"
     #
@@ -425,18 +483,18 @@ function call_{{operationId}} {
     else
         body_json_curl=$(body_parameters_to_json)
         if [[ "$print_curl" = true ]]; then
-            echo "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
         else
-            eval "curl ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
         fi
     fi
 {{/hasBodyParam}}
 {{^hasBodyParam}}
     if [[ "$print_curl" = true ]]; then
         echo ""
-        echo "curl ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+        echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
     else
-        eval "curl ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+        eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
     fi
 {{/hasBodyParam}}
 }
@@ -474,11 +532,18 @@ fi
 # 
 # Pass all arguemnts before 'operation' to cURL except the ones we override
 #
+take_user=false
 take_host=false
 take_accept_header=false
 take_contenttype_header=false
 
 for key in "$@"; do
+# Take the value of -u|--user argument
+if [[ "$take_user" = true ]]; then
+    basic_auth_credential="$key"
+    take_user=false
+    continue
+fi
 # Take the value of --host argument
 if [[ "$take_host" = true ]]; then
     host="$key"
@@ -515,6 +580,9 @@ case $key in
     print_about
     exit 0
     ;;
+    -u|--user)
+    take_user=true
+    ;;    
     --host)
     take_host=true
     ;;
@@ -559,6 +627,21 @@ case $key in
     # only after the operation argument
     if [[ "$operation" ]]; then
         IFS=':' read header_name header_value <<< "$key"
+{{#hasAuthMethods}}
+{{#authMethods}}
+{{#isApiKey}}
+{{#isKeyInHeader}}
+        #
+        # If the header key is the same as the api_key expected by API in the
+        # header, override the ${apikey_auth_credential} variable
+        #
+        if [[ $header_name == "{{keyParamName}}" ]]; then
+            apikey_auth_credential=$header_value
+        fi
+{{/isKeyInHeader}}
+{{/isApiKey}}
+{{/authMethods}}
+{{/hasAuthMethods}}
         header_arguments[$header_name]=$header_value
     else
         curl_arguments+=" $key"
