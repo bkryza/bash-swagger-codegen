@@ -38,6 +38,8 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
   public static final String 
                            GENERATE_BASH_COMPLETION = "generateBashCompletion";
   public static final String 
+                           GENERATE_ZSH_COMPLETION = "generateZshCompletion";
+  public static final String 
                     HOST_ENVIRONMENT_VARIABLE_NAME = "hostEnvironmentVariable";
   public static final String 
          BASIC_AUTH_ENVIRONMENT_VARIABLE_NAME = "basicAuthEnvironmentVariable";
@@ -112,6 +114,8 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
                       "(e.g. petstore-cli)"));
     cliOptions.add(CliOption.newBoolean(GENERATE_BASH_COMPLETION, 
                       "Whether to generate the Bash completion script"));
+    cliOptions.add(CliOption.newBoolean(GENERATE_ZSH_COMPLETION, 
+                      "Whether to generate the Zsh completion script"));
     cliOptions.add(CliOption.newString(HOST_ENVIRONMENT_VARIABLE_NAME, 
                       "Name of environment variable where host can be defined "+
                       "(e.g. PETSTORE_HOST='http://petstore.swagger.io:8080')"));
@@ -189,11 +193,21 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
       }
 
       if (additionalProperties.containsKey(PROCESS_MARKDOWN)) {
-        this.processMarkdown = true;
+        this.processMarkdown 
+          = Boolean.parseBoolean(
+              additionalProperties.get(PROCESS_MARKDOWN).toString());
       }
   
       if (additionalProperties.containsKey(GENERATE_BASH_COMPLETION)) {
-        this.generateBashCompletion = true;
+        this.generateBashCompletion 
+          = Boolean.parseBoolean(
+              additionalProperties.get(GENERATE_BASH_COMPLETION).toString());
+      }
+
+      if (additionalProperties.containsKey(GENERATE_ZSH_COMPLETION)) {
+        this.generateBashCompletion 
+          = Boolean.parseBoolean(
+              additionalProperties.get(GENERATE_ZSH_COMPLETION).toString());
       }
 
       if (additionalProperties.containsKey(SCRIPT_NAME)) {
@@ -228,6 +242,8 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
                                           "client.mustache",  "", scriptName));
       supportingFiles.add(new SupportingFile(
                "bash-completion.mustache", "", scriptName+".bash-completion"));
+      supportingFiles.add(new SupportingFile(
+               "zsh-completion.mustache", "", "_"+scriptName));
 
   }
 
