@@ -323,6 +323,8 @@ echo "  $ops" | column -t -s ';'
 {{#host}}echo -e "              \t\t\t\t(e.g. 'https://{{host}}')"{{/host}}
 {{^host}}echo -e "              \t\t\t\t(e.g. 'https://127.0.0.1:8080')"{{/host}}
 {{/swagger}}
+    echo -e "  --force\t\t\tForce command invocation in spite of missing required parameters"
+    echo -e "         \t\t\tor wrong content type"
     echo -e "  --dry-run\t\t\t\tPrint out the cURL command without"
     echo -e "           \t\t\t\texecuting it"
     echo -e "  -ac,--accept <mime-type>\t\tSet the 'Accept' header in the request"
@@ -375,8 +377,10 @@ function print_{{operationId}}_help {
     echo ""
     echo -e "$(tput bold)$(tput setaf 7){{operationId}} - {{{summary}}}$(tput sgr0)"
     echo ""
+{{#notes}}
     echo -e "{{{notes}}}" | fold -sw 80
     echo -e ""
+{{/notes}}
 {{#hasParams}}
     echo -e "$(tput bold)$(tput setaf 7)Parameters$(tput sgr0)"
 {{#pathParams}}
@@ -394,9 +398,11 @@ function print_{{operationId}}_help {
     echo -e ""
 {{#bodyParams}}
 {{#vendorExtensions}}
+{{#x-codegen-body-example}}
     echo -e "$(tput bold)$(tput setaf 7)Body content example$(tput sgr0)"
     echo -e '{{{x-codegen-body-example}}}' | fold -sw 80
     echo -e ""
+{{/x-codegen-body-example}}
 {{/vendorExtensions}}
 {{/bodyParams}}
 {{/hasParams}}
