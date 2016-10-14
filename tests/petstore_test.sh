@@ -8,22 +8,21 @@ export PETSTORE_HOST="http://petstore.swagger.io"
 
 @test "addPet without host" {
     unset PETSTORE_HOST
-    run $PETSTORE_CLI -ac xml -ct json \
+    run bash $PETSTORE_CLI -ac xml -ct json \
         addPet id+=123321 name:=lucky status:=available
-    echo $output
     [[ "$output" =~ "Error: No hostname provided!!!" ]]
 }
 
 
 @test "addPet without content type" {
-    run $PETSTORE_CLI  -ac xml --host $PETSTORE_HOST \
+    run bash $PETSTORE_CLI  -ac xml --host $PETSTORE_HOST \
         addPet id+=123321 name:=lucky status:=available
     [[ "$output" =~ "Error: Request's content-type not specified!" ]]
 }
 
 
 @test "addPet from parameters" {
-    run $PETSTORE_CLI -ct json -ac xml \
+    run bash $PETSTORE_CLI -ct json -ac xml \
         addPet id+=123321 name:=lucky status:=available
     [[ "$output" =~ "<id>123321</id>" ]]
 }
