@@ -376,7 +376,7 @@ function print_version {
 function print_{{operationId}}_help {
     echo ""
     echo -e "$(tput bold)$(tput setaf 7){{operationId}} - {{{summary}}}$(tput sgr0)"
-    echo ""
+    echo -e ""
 {{#notes}}
     echo -e "{{{notes}}}" | fold -sw 80
     echo -e ""
@@ -406,6 +406,12 @@ function print_{{operationId}}_help {
 {{/vendorExtensions}}
 {{/bodyParams}}
 {{/hasParams}}
+read -d '' resp <<EOF{{#responses}}
+  {{code}};{{{message}}}
+{{/responses}}
+EOF
+    echo -e "$(tput bold)$(tput setaf 7)Responses$(tput sgr0)"
+    echo -e "  $resp" | column -t -s ';'
 }
 {{/operation}}
 {{/operations}}
