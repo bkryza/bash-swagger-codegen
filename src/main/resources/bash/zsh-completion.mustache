@@ -216,7 +216,6 @@ arg_output=(\
   )
 
 _arguments -C -s $arg_http $arg_ftp $arg_other $arg_crypto $arg_connection $arg_auth $arg_input $arg_output \
-  {-h,--help}'[print usage]' \
   {-M,--manual}'[print manual]' \
   '*'{-K,--config}'[use other config file to read arguments from]:config file:_files' \
   '--libcurl[output libcurl code for the operation to file]:output file:_files' \
@@ -225,7 +224,8 @@ _arguments -C -s $arg_http $arg_ftp $arg_other $arg_crypto $arg_connection $arg_
   {-S,--show-error}'[show errors in silent mode]' \
   '--stderr[redirect stderr to specified file]:output file:_files' \
   '-q[do not read settings from .curlrc (must be first option)]' \
-  {-V,--version}'[displays information about curl and the libcurl version it uses]' \
+  {-h,--help}'[Print help and list of operations]' \
+  {-V,--version}'[Print service API version]' \
   '--about[Print the information about service]' \
   '--host[Specify the host URL]':URL:_urls \
   '--dry-run[Print out the cURL command without executing it]' \
@@ -261,9 +261,11 @@ case $state in
 {{#operation}}
       {{operationId}})
         local -a _op_arguments
-        _op_arguments=({{#pathParams}}"{{baseName}}=:{{{description}}}"
-{{/pathParams}}{{#queryParams}}"{{baseName}}=:{{{description}}}"
-{{/queryParams}}{{#headerParams}}"{{baseName}}\::{{{description}}}"
+        _op_arguments=(
+          {{#pathParams}}"{{baseName}}=:{{{description}}}"
+{{/pathParams}}          {{#queryParams}}{{#isBoolean}}"{{baseName}}=true:{{description}}"
+          "{{baseName}}=false:{{description}}"{{/isBoolean}}{{^isBoolean}}"{{baseName}}=:{{description}}"{{/isBoolean}}
+{{/queryParams}}          {{#headerParams}}"{{baseName}}\::{{{description}}}"
 {{/headerParams}})
         _describe -t actions 'operations' _op_arguments && ret=0
         ;;

@@ -394,19 +394,19 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
          * Convert all markdown section 1 level headers with bold
          */ 
         result = result.replaceAll("(?m)^\\s*\\#\\s+(.+)$",
-                          "\n\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
+                          "\n\\$\\(tput bold\\)\\$\\(tput setaf 6\\)$1\\$\\(tput sgr0\\)");
 
         /**
          * Convert all markdown section 2 level headers with bold
          */ 
         result = result.replaceAll("(?m)^\\s*\\#\\#\\s+(.+)$",
-                          "\n\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
+                          "\n\\$\\(tput bold\\)\\$\\(tput setaf 6\\)$1\\$\\(tput sgr0\\)");
 
         /**
          * Convert all markdown section 3 level headers with bold
          */ 
         result = result.replaceAll("(?m)^\\s*\\#\\#\\#\\s+(.+)$",
-                          "\n\\$\\(tput bold\\)$1\\$\\(tput sgr0\\)");
+                          "\n\\$\\(tput bold\\)\\$\\(tput setaf 6\\)$1\\$\\(tput sgr0\\)");
 
         /**
          * Convert all markdown code blocks into --- delimited sections
@@ -416,6 +416,12 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
 
         result = result.replaceAll("(?m)\\s*\\'\\'\\'.*$",
                           "\n---");
+
+        /**
+         * Remove any trailing new line at the end of the string
+         */
+        result = result.replaceAll("\\s+$", "");
+        
       }
 
       return result;

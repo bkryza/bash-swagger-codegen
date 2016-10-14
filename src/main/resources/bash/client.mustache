@@ -250,9 +250,9 @@ function build_request_path {
 function print_help {
 cat <<EOF
 
-$(tput bold){{appName}} command line client (API version {{#swagger}}{{#info}}{{version}}{{/info}}{{/swagger}})$(tput sgr0)
+$(tput bold)$(tput setaf 7){{appName}} command line client (API version {{#swagger}}{{#info}}{{version}}{{/info}}{{/swagger}})$(tput sgr0)
 
-$(tput bold)Usage$(tput sgr0)
+$(tput bold)$(tput setaf 7)Usage$(tput sgr0)
 
   ${script_name} [-h|--help] [-V|--version] [--about] [<curl-options>]
            --host <url> [--dry-run] <operation> [-h|--help] [<headers>] 
@@ -270,7 +270,7 @@ $(tput bold)Usage$(tput sgr0)
 
 EOF
 {{#hasAuthMethods}}
-    echo -e "$(tput bold)Authentication methods$(tput sgr0)"
+    echo -e "$(tput bold)$(tput setaf 7)Authentication methods$(tput sgr0)"
     echo -e ""
 {{#authMethods}}
 {{#isBasic}}
@@ -298,11 +298,11 @@ EOF
 {{/authMethods}}
     echo ""
 {{/hasAuthMethods}}
-    echo -e "$(tput bold)Operations (grouped by tags)$(tput sgr0)"
+    echo -e "$(tput bold)$(tput setaf 7)Operations (grouped by tags)$(tput sgr0)"
 {{#apiInfo}}
 {{#apis}}
     echo ""
-    echo -e "$(tput bold)[{{classVarName}}]$(tput sgr0)"
+    echo -e "$(tput bold)$(tput setaf 7)[{{classVarName}}]$(tput sgr0)"
 read -d '' ops <<EOF
 {{#operations}}
 {{#operation}}
@@ -314,7 +314,7 @@ echo "  $ops" | column -t -s ';'
 {{/apis}}
 {{/apiInfo}}
     echo ""
-    echo -e "$(tput bold)Options$(tput sgr0)"
+    echo -e "$(tput bold)$(tput setaf 7)Options$(tput sgr0)"
     echo -e "  -h,--help\t\t\t\tPrint this help"
     echo -e "  -V,--version\t\t\t\tPrint API version"
     echo -e "  --about\t\t\t\tPrint the information about service"
@@ -339,7 +339,7 @@ echo "  $ops" | column -t -s ';'
 ##############################################################################
 function print_about {
     echo ""
-    echo -e "$(tput bold){{appName}} command line client (API version {{#swagger}}{{#info}}{{version}}{{/info}}{{/swagger}})$(tput sgr0)"
+    echo -e "$(tput bold)$(tput setaf 7){{appName}} command line client (API version {{#swagger}}{{#info}}{{version}}{{/info}}{{/swagger}})$(tput sgr0)"
     echo ""
     echo -e "License: {{#swagger}}{{#info}}{{#license}}{{name}}{{/license}}{{/info}}{{/swagger}}"
     echo -e "Contact: {{#swagger}}{{#info}}{{#contact}}{{email}}{{/contact}}{{/info}}{{/swagger}}"
@@ -373,12 +373,12 @@ function print_version {
 ##############################################################################
 function print_{{operationId}}_help {
     echo ""
-    echo -e "$(tput bold){{operationId}} - {{{summary}}}$(tput sgr0)"
+    echo -e "$(tput bold)$(tput setaf 7){{operationId}} - {{{summary}}}$(tput sgr0)"
     echo ""
     echo -e "{{{notes}}}" | fold -sw 80
     echo -e ""
 {{#hasParams}}
-    echo -e "$(tput bold)Parameters$(tput sgr0)"
+    echo -e "$(tput bold)$(tput setaf 7)Parameters$(tput sgr0)"
 {{#pathParams}}
     echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
 {{/pathParams}}
@@ -394,7 +394,7 @@ function print_{{operationId}}_help {
     echo -e ""
 {{#bodyParams}}
 {{#vendorExtensions}}
-    echo -e "$(tput bold)Body content example$(tput sgr0)"
+    echo -e "$(tput bold)$(tput setaf 7)Body content example$(tput sgr0)"
     echo -e '{{{x-codegen-body-example}}}' | fold -sw 80
     echo -e ""
 {{/vendorExtensions}}
