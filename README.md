@@ -184,14 +184,15 @@ fi
 - [ ] Add checking if all required parameters are provided
 - [x] Add option to specify default cURL options in codegen which will be passed to each command
 - [x] Add shell completion generation
-- [ ] Add enum values for parameters in bash completion
+- [ ] Add enum values for parameters shell completion
+- [x] Add boolean values for parameters shell completion
 - [ ] Wrap handling of errors returned by the service, using comments defined in the Swagger specification
 - [x] Add abbreviated form support for standard headers (Accept, Content-type, X-Auth-Token, ...)
 - [ ] Add proper checking for Bash version and cURL availability
 - [ ] Improve `--help` and `--about` formatting
-- [ ] Add Zsh completion generation 
+- [x] Add Zsh completion generation 
 - [ ] Add support to bash 4.0-4.2 (currently must be >= 4.3)
-- [ ] Add environment variables for authentication and hostname
+- [x] Add environment variables for authentication and hostname
 - [ ] Add manpage generation
 
 ## LICENSE
