@@ -78,7 +78,7 @@ _{{scriptName}}()
 {{#apis}}
 {{#operations}}
 {{#operation}}
-    operation_parameters["{{operationId}}"]="{{#allParams}}{{#pathParams}}{{baseName}}= {{/pathParams}}{{#queryParams}}{{baseName}}= {{/queryParams}}{{#headerParams}}{{baseName}}: {{/headerParams}}{{/allParams}}"
+    operation_parameters["{{operationId}}"]="{{#pathParams}}{{baseName}}= {{/pathParams}}{{#queryParams}}{{baseName}}= {{/queryParams}}{{#headerParams}}{{baseName}}: {{/headerParams}}"
 {{/operation}}
 {{/operations}}
 {{/apis}}
