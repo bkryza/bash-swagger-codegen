@@ -179,7 +179,7 @@ Alternatively, the script can be copied to the `/etc/bash-completion.d` (or on O
 sudo cp /output/petstore-cli.bash-completion /etc/bash-completion.d/petstore-cli
 ```
 
-### OS X
+#### OS X
 On OSX you might need to install bash-completion using Homebrew:
 ```shell
 brew install bash-completion
@@ -211,6 +211,7 @@ In Zsh, the generated `_{{scriptName}}` file (e.g. _petstore-cli) must be copied
 - [x] Add environment variables for authentication and hostname
 - [ ] Add manpage generation
 - [ ] Add support for form data
+- [ ] Move todos to Github issues
 
 ## LICENSE
 Copyright 2016 Bartosz Kryza <bkryza@gmail.com>
