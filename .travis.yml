@@ -25,6 +25,6 @@ before_install:
 
 script:
     - mvn assembly:assembly -DdescriptorId=jar-with-dependencies
-    - java -cp target/bash-swagger-codegen-1.0.0.jar io.swagger.codegen.SwaggerCodegen generate -l bash -i http://petstore.swagger.io/v2/swagger.json -o output -c resources/example-config.json
+    - java -cp target/bash-swagger-codegen-1.0.0.jar io.swagger.codegen.SwaggerCodegen generate -l bash -i tests/resources/petstore-bash.json -o output -c resources/example-config.json
     - bats tests/petstore_test.sh
     

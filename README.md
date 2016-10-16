@@ -9,10 +9,11 @@ This generator uses [swagger-codegen](github.com/swagger-api/swagger-codegen).
 For more information about Swagger™ check out [OpenAPI-Spec](https://github.com/OAI/OpenAPI-Specification).
 
 ## Features
-- Fully automatic generation of a working Bash script to access any Swagger REST service
-- Generation of Bash completion script
-- All valid cURL options can be used directly
+- Fully automatic generation of a working Bash script to access any Swagger-defined REST service
+- Generation of Bash and Zsh completion scripts
+- All valid cURL options can be passed directly
 - Preview of cURL commands to execute each operation using `--dry-run` option
+- Complete help for entire service as well as for each operation
 
 ## Usage
 
@@ -34,7 +35,11 @@ Define custom codegen properties in a Json file, e.g.:
   "processMarkdown": true,
   "curlOptions": "-sS --tlsv1.2",
   "scriptName": "petstore-cli",
-  "generateBashCompletion": true
+  "generateBashCompletion": true,
+  "generateZshCompletion": true,
+  "hostEnvironmentVariable": "PETSTORE_HOST",
+  "basicAuthEnvironmentVariable": "PETSTORE_BASIC_AUTH",
+  "apiKeyAuthEnvironmentVariable": "PETSTORE_API_KEY"
 }
 ```
 
@@ -53,7 +58,7 @@ Swagger Petstore command line client (API version 1.0.0)
 
 Usage
 
-$ petstore-cli [-h|--help] [-V|--version] [--about] [<curl-options>]
+  petstore-cli [-h|--help] [-V|--version] [--about] [<curl-options>]
            --host <url> [--dry-run] <operation> [-h|--help] [<headers>]
            [<parameters>]
 
@@ -61,21 +66,24 @@ $ petstore-cli [-h|--help] [-V|--version] [--about] [<curl-options>]
   - <headers> - HTTP headers can be passed in the form HEADER:VALUE
   - <parameters> - REST operation parameters can be passed in the following
                    forms:
-                     * KEY=VALUE - path or query parameters
-                     * KEY:=VALUE - body parameters which will be added to body
-                                    Json as '{ \"KEY\": \"VALUE\" }'
-                     * KEY+=VALUE - body parameters which will be added to body
-                                    Json as '{ \"KEY\": VALUE }'
+                    * KEY=VALUE - path or query parameters
+                    * KEY:=VALUE - body parameters which will be added to body
+                                   Json as '{ \"KEY\": \"VALUE\" }'
+                    * KEY+=VALUE - body parameters which will be added to body
+                                   Json as '{ \"KEY\": VALUE }'
 
 Authentication methods
 
-    - Api-key (add 'api_key:ACCESS_KEY' after <operation>)
-    - OAuth (url: http://petstore.swagger.io/oauth/dialog)
-        Scopes:
-          * write:pets - modify pets in your account
-          * read:pets - read your pets
+  - Api-key - add 'api_key:<access-key>' after <operation>
+              or export PETSTORE_API_KEY='<api-key>'
+  - OAuth2 (flow: implicit)
+      Authorization URL:
+        * http://petstore.swagger.io/oauth/dialog
+      Scopes:
+        * write:pets - modify pets in your account
+        * read:pets - read your pets
 
-Operations
+Operations (grouped by tags)
 
 [pet]
   addPet             Add a new pet to the store
@@ -104,16 +112,14 @@ Operations
   updateUser                 Updated user
 
 Options
-  -h,--help                             Print this help
-  -V,--version                          Print API version
-  --about                               Print the information about service
-  --host <url>                          Specify the host URL (e.g.
-                                        'https://petstore.swagger.io')
-  --dry-run                             Print out the cURL command without
-                                        executing it
-  -ac,--accept <mime-type>              Set the accept header in the request
-  -ct,--content-type <mime-type>        Set the content-type header in
-                                        the request
+  -h,--help           Print this help
+  -V,--version        Print API version
+  --about             Print the information about service
+  --host <url>        Specify the host URL (e.g. 'https://petstore.swagger.io')
+  --force             Force command invocation in spite of missing required  parameters or wrong content type
+  --dry-run           Print out the cURL command without executing it
+  -ac,--accept <mime-type>    Set the 'Accept' header in the request
+  -ct,--content-type <mime-type>  Set the 'Content-type' header in the request
 ```
 
 Client generator takes several specific configuration options:
@@ -121,6 +127,10 @@ Client generator takes several specific configuration options:
 * *curlOptions* - [string] a list of default cURL options that will be added to each command
 * *scriptName* - [string] the name of the target script, necessary when building Bash completion script
 * *generateBashCompletion* - [boolean] if set to `true` the Bash completion script will be generated
+* *generateZshCompletion* - [boolean] if set to `true` the Bash completion script will be generated
+* *hostEnvironmentVariable* - [string] the name of environment variable to search for default host
+* *basicAuthEnvironmentVariable* - [string] the name of environment variable to search for default basic auth credentials
+* *apiKeyAuthEnvironmentVariable* - [string] the name of environment variable to search for default api key
 
 These options can be specified in a Json file used when running the codegen using option `-c` (see [example](resources/example-config.json)).
 
@@ -154,7 +164,9 @@ $ output/petstore-cli --host http://petstore.swagger.io --content-type json --dr
 curl -sS --tlsv1.2 -H 'Content-type: application/json' -X POST -d '{"name": "lucky", "status": "available", "id": 891}' "http://petstore.swagger.io/v2/pet"
 ```
 
-## Installing generated Bash completion
+## Shell completion
+
+### Bash
 The generated bash-completion script can be either directly loaded to the current Bash session using:
 
 ```shell
@@ -180,15 +192,19 @@ if [ -f $(brew --prefix)/etc/bash_completion ]; then
 fi
 ``` 
 
+### Zsh
+In Zsh, the generated `_{{scriptName}}` file (e.g. _petstore-cli) must be copied to one of the folders under `$fpath` variable.
+
+
 ## TODO
-- [ ] Add checking if all required parameters are provided
+- [x] Add checking if all required parameters are provided
 - [x] Add option to specify default cURL options in codegen which will be passed to each command
 - [x] Add shell completion generation
 - [ ] Add enum values for parameters shell completion
 - [x] Add boolean values for parameters shell completion
 - [ ] Wrap handling of errors returned by the service, using comments defined in the Swagger specification
 - [x] Add abbreviated form support for standard headers (Accept, Content-type, X-Auth-Token, ...)
-- [ ] Add proper checking for Bash version and cURL availability
+- [x] Add proper checking for Bash version and cURL availability
 - [ ] Improve `--help` and `--about` formatting
 - [x] Add Zsh completion generation 
 - [ ] Add support to bash 4.0-4.2 (currently must be >= 4.3)
