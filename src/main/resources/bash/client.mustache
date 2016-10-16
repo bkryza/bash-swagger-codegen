@@ -44,7 +44,62 @@ declare -A header_arguments
 ##
 # Map for operation parameters passed after operation as PARAMETER=VALUE
 # These will be mapped to appropriate path or query parameters
+# The values in operation_parameters are arrays, so that multiple values
+# can be provided for the same parameter if allowed by API specification
 declare -A operation_parameters
+
+##
+# This array stores the minimum number of required occurences for parameter
+# 0 - optional
+# 1 - required
+declare -A operation_parameters_minimum_occurences
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+{{#allParams}}
+operation_parameters_minimum_occurences["{{operationId}}:::{{paramName}}"]={{#required}}{{#vendorExtensions}}{{#x-codegen-collection-min-items}}{{x-codegen-collection-min-items}}{{/x-codegen-collection-min-items}}{{^x-codegen-collection-min-items}}1{{/x-codegen-collection-min-items}}{{/vendorExtensions}}{{^vendorExtensions}}1{{/vendorExtensions}}{{/required}}{{^required}}0{{/required}}
+{{/allParams}}
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+##
+# This array stores the maximum number of allowed occurences for parameter
+# 1 - single value
+# 2 - 2 values
+# N - N values
+# 0 - unlimited
+declare -A operation_parameters_maximum_occurences
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+{{#allParams}}
+operation_parameters_maximum_occurences["{{operationId}}:::{{paramName}}"]={{#vendorExtensions}}{{#x-codegen-collection-max-items}}{{x-codegen-collection-max-items}}{{/x-codegen-collection-max-items}}{{^x-codegen-collection-max-items}}0{{/x-codegen-collection-max-items}}{{/vendorExtensions}}{{^vendorExtensions}}0{{/vendorExtensions}}
+{{/allParams}}
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
+##
+# The type of collection for specifying multiple values for parameter:
+# - multi, csv, ssv, tsv
+declare -A operation_parameters_collection_type
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+{{#allParams}}
+operation_parameters_collection_type["{{operationId}}:::{{paramName}}"]={{#isContainer}}{{#vendorExtensions}}{{#x-codegen-collection-multi}}"multi"{{/x-codegen-collection-multi}}{{#x-codegen-collection-csv}}"csv"{{/x-codegen-collection-csv}}{{#x-codegen-collection-tsv}}"tsv"{{/x-codegen-collection-tsv}}{{#x-codegen-collection-ssv}}"ssv"{{/x-codegen-collection-ssv}}{{/vendorExtensions}}{{^vendorExtensions}}""{{/vendorExtensions}}{{/isContainer}}{{^isContainer}}""{{/isContainer}}
+{{/allParams}}
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}}
+
 
 ##
 # Map for body parameters passed after operation as PARAMETER:=VALUE
@@ -89,6 +144,12 @@ header_content_type=""
 body_content_temp_file=""
 
 ##
+# If this variable is set to true, the request will be performed even
+# if parameters for required query, header or body values are not provided
+# (path parameters are still required).
+force=""
+
+##
 # Declare some mime types abbreviations for easier content-type and accepts
 # headers specification
 declare -A mime_type_abbreviations
@@ -112,6 +173,27 @@ mime_type_abbreviations["png"]="image/png"
 mime_type_abbreviations["gif"]="image/gif"
 mime_type_abbreviations["bmp"]="image/bmp"
 mime_type_abbreviations["tiff"]="image/tiff"
+
+
+##############################################################################
+#
+# Escape special URL characters
+#
+##############################################################################
+function url_escape {
+    local raw_url=$1
+
+    value=$(sed -e 's/ /%20/g' \
+       -e 's/!/%21/g' \
+       -e 's/"/%22/g' \
+       -e 's/#/%23/g' \
+       -e 's/\&/%26/g' \
+       -e 's/(/%28/g' \
+       -e 's/)/%29/g' \
+       -e 's/:/%3A/g' <<<$raw_url);
+
+    echo $value
+}
 
 
 ##############################################################################
@@ -230,7 +312,80 @@ function build_request_path {
     local query_parameter_count=${#query_params[@]}
     local count=0
     for qparam in "${query_params[@]}"; do
-        path_template+="${qparam}=${operation_parameters[${qparam}]}"
+        # Get the array of parameter values
+        local parameter_values=($(echo "${operation_parameters[$qparam]}" | sed -e 's/'":::"'/\n/g' | while read line; do echo $line | sed 's/[\t ]/'":::"'/g'; done))
+
+        #
+        # Check if the number of provided values is not less than minimum
+        # required
+        #
+        if [[ ${#parameter_values[@]} -lt ${operation_parameters_minimum_occurences["${operation}:::${qparam}"]} ]]; then
+            echo -e ""
+            echo -e "Error: Too few values provided for '${qparam}' parameter"
+            echo -e ""
+            exit 1
+        fi
+
+        #
+        # Check if the number of provided values is not more than maximum
+        #
+        if [[ ${operation_parameters_maximum_occurences["${operation}:::${qparam}"]} -gt 0 \
+              && ${#parameter_values[@]} -gt ${operation_parameters_maximum_occurences["${operation}:::${qparam}"]} ]]; then
+            echo -e ""
+            echo -e "Error: Too many values provided for '${qparam}' parameter"
+            echo -e ""
+            exit 1
+        fi
+
+
+        if [[ "${operation_parameters_collection_type["${operation}:::${qparam}"]}" == "multi" ]]; then
+            local vcount=0
+            for qvalue in "${parameter_values[@]}"; do
+                path_template+="${qparam}=$(url_encode ${qvalue})"
+
+                if [[ $vcount -lt ${#parameter_values[@]}-1 ]]; then
+                    path_template+="&"
+                fi
+                vcount+=1
+            done
+        elif [[ "${operation_parameters_collection_type["${operation}:::${qparam}"]}" == "csv" ]]; then
+            path_template+="${qparam}="
+            for qvalue in "${parameter_values[@]}"; do
+                path_template+="$(url_encode ${qvalue})"
+
+                if [[ $vcount -lt ${#parameter_values[@]}-1 ]]; then
+                    path_template+=","
+                fi
+                vcount+=1
+            done
+        elif [[ "${operation_parameters_collection_type["${operation}:::${qparam}"]}" == "ssv" ]]; then
+            path_template+="${qparam}="
+            for qvalue in "${parameter_values[@]}"; do
+                path_template+="${qvalue}"
+
+                if [[ $vcount -lt ${#parameter_values[@]}-1 ]]; then
+                    path_template+=" "
+                fi
+                vcount+=1
+            done
+        elif [[ "${operation_parameters_collection_type["${operation}:::${qparam}"]}" == "tsv" ]]; then
+            path_template+="${qparam}="
+            for qvalue in "${parameter_values[@]}"; do
+                path_template+="${qvalue}"
+
+                if [[ $vcount -lt ${#parameter_values[@]}-1 ]]; then
+                    path_template+="\t"
+                fi
+                vcount+=1
+            done
+        else
+            echo -e ""
+            echo -e "Error: Unsupported collection format "
+            echo -e ""
+            exit 1
+        fi
+
+
         if [[ $count -lt $query_parameter_count-1 ]]; then
             path_template+="&"
         fi
@@ -381,22 +536,21 @@ function print_{{operationId}}_help {
     echo -e "{{{notes}}}" | fold -sw 80
     echo -e ""
 {{/notes}}
-{{#hasParams}}
+{{#allParams}}
     echo -e "$(tput bold)$(tput setaf 7)Parameters$(tput sgr0)"
-{{#pathParams}}
-    echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
-{{/pathParams}}
-{{#queryParams}}
-    echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
-{{/queryParams}}
-{{#headerParams}}
-    echo -e "  * {{paramName}} [{{dataType}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
-{{/headerParams}}
-{{#bodyParams}}
+{{#isPathParam}}
+    echo -e "  * {{paramName}} [{{baseType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
+{{/isPathParam}}
+{{#isQueryParam}}
+    echo -e "  * {{paramName}} [{{baseType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}} - {{{description}}}{{#isContainer}}. Specify as: {{#vendorExtensions}}{{#x-codegen-collection-multi}}{{paramName}}=value1 {{paramName}}=value2 {{paramName}}=...{{/x-codegen-collection-multi}}{{#x-codegen-collection-csv}}{{paramName}}="value1,value2,..."{{/x-codegen-collection-csv}}{{#x-codegen-collection-pipes}}{{paramName}}="value1|value2|..."{{/x-codegen-collection-pipes}}{{#x-codegen-collection-ssv}}{{paramName}}="value1 value2 ..."{{/x-codegen-collection-ssv}}{{#x-codegen-collection-tsv}}{{paramName}}="value1\tvalue2\t..."{{/x-codegen-collection-tsv}}{{/vendorExtensions}}{{/isContainer}}{{^isContainer}}{{dataType}}{{/isContainer}}" \
+        | fold -sw 80 | sed '2,$s/^/    /'
+{{/isQueryParam}}
+{{#isHeaderParam}}
+    echo -e "  * {{paramName}} [{{baseType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
+{{/isHeaderParam}}
+{{#isBodyParam}}
     echo -e "  * body [{{#consumes}}{{mediaType}}{{#hasMore}},{{/hasMore}}{{/consumes}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
-{{/bodyParams}}
     echo -e ""
-{{#bodyParams}}
 {{#vendorExtensions}}
 {{#x-codegen-body-example}}
     echo -e "$(tput bold)$(tput setaf 7)Body content example$(tput sgr0)"
@@ -404,8 +558,8 @@ function print_{{operationId}}_help {
     echo -e ""
 {{/x-codegen-body-example}}
 {{/vendorExtensions}}
-{{/bodyParams}}
-{{/hasParams}}
+{{/isBodyParam}}
+{{/allParams}}
 read -d '' resp <<EOF{{#responses}}
   {{code}};{{{message}}}
 {{/responses}}
@@ -484,9 +638,9 @@ function call_{{operationId}} {
     #
     if [[ -n $body_content_temp_file ]]; then
         if [[ "$print_curl" = true ]]; then
-            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+            echo "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}$(url_escape ${path})\" -d @-"
         else
-            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\" -d @-"
+            eval "cat ${body_content_temp_file} | curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}$(url_escape ${path})\" -d @-"
         fi
         rm "${body_content_temp_file}"
     #
@@ -495,18 +649,18 @@ function call_{{operationId}} {
     else
         body_json_curl=$(body_parameters_to_json)
         if [[ "$print_curl" = true ]]; then
-            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+            echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}$(url_escape ${path})\""
         else
-            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}${path}\""
+            eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} ${body_json_curl} \"${host}$(url_escape ${path})\""
         fi
     fi
 {{/hasBodyParam}}
 {{^hasBodyParam}}
     if [[ "$print_curl" = true ]]; then
         echo ""
-        echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+        echo "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}$(url_escape ${path})\""
     else
-        eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}${path}\""
+        eval "curl ${basic_auth_option} ${curl_arguments} ${headers_curl} -X ${method} \"${host}$(url_escape ${path})\""
     fi
 {{/hasBodyParam}}
 }
@@ -664,7 +818,11 @@ case $key in
     # only after the operation argument
     if [[ "$operation" ]]; then
         IFS='=' read parameter_name parameter_value <<< "$key"
-        operation_parameters[$parameter_name]=$parameter_value
+        if [[ -z "${operation_parameters[$parameter_name]+foo}" ]]; then
+            operation_parameters[$parameter_name]="${parameter_value}"
+        else
+            operation_parameters[$parameter_name]+=":::${parameter_value}"
+        fi
     else
         curl_arguments+=" $key"
     fi

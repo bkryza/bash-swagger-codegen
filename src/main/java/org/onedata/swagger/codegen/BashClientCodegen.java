@@ -340,7 +340,56 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
       Model model = ((BodyParameter)param).getSchema();
 
     }
+    else if(param instanceof SerializableParameter) {
 
+      /**
+       * Currently it's not possible to specify in the codegen other collection
+       * formats than 'multi'
+       */
+      SerializableParameter sparam = (SerializableParameter)param;
+
+      if(     sparam.getCollectionFormat() != null 
+          && !sparam.getCollectionFormat().isEmpty()) {
+
+        String collectionFormat = sparam.getCollectionFormat();
+
+        if(sparam.isExclusiveMaximum()!=null && sparam.isExclusiveMaximum()) {
+          p.vendorExtensions.put("x-codegen-collection-max-items", 
+                                 sparam.getMaxItems());
+        }
+
+        if(sparam.isExclusiveMinimum()!=null && sparam.isExclusiveMinimum()) {
+          p.vendorExtensions.put("x-codegen-collection-min-items", 
+                                 sparam.getMinItems());
+        }
+        
+        if( (collectionFormat.equals("multi")) && (param.getIn().equals("query")) ) {
+          
+          /**
+           * 'multi' is only supported for query parameters
+           */
+          p.vendorExtensions.put("x-codegen-collection-multi", true);
+
+        }
+        else if(collectionFormat.equals("csv")) {
+          p.vendorExtensions.put("x-codegen-collection-csv", true);
+        }
+        else if(collectionFormat.equals("ssv")) {
+          p.vendorExtensions.put("x-codegen-collection-ssv", true);
+        }
+        else if(collectionFormat.equals("tsv")) {
+          p.vendorExtensions.put("x-codegen-collection-tsv", true);
+        }
+        else if(collectionFormat.equals("pipes")) {
+          p.vendorExtensions.put("x-codegen-collection-pipes", true);
+        }
+        else {
+          /** Unsupported collection format */
+        }
+
+      }
+
+    }
 
     return p;
 
