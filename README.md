@@ -14,6 +14,7 @@ For more information about Swagger™ check out [OpenAPI-Spec](https://github.co
 - All valid cURL options can be passed directly
 - Preview of cURL commands to execute each operation using `--dry-run` option
 - Complete help for entire service as well as for each operation
+- No external dependencies besides Bash >= 4.3 and cURL
 
 ## Usage
 
