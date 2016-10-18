@@ -693,8 +693,8 @@ EOF
 #
 ##############################################################################
 function call_{{operationId}} {
-    local path_parameter_names=({{#pathParams}}{{baseName}}{{/pathParams}})
-    local query_parameter_names=({{#queryParams}}{{baseName}}{{/queryParams}})
+    local path_parameter_names=({{#pathParams}}{{baseName}}{{#hasMore}} {{/hasMore}}{{/pathParams}})
+    local query_parameter_names=({{#queryParams}}{{baseName}}{{#hasMore}} {{/hasMore}}{{/queryParams}})
 
     if [[ $force = false ]]; then
         validate_request_parameters "{{basePathWithoutHost}}{{path}}" path_parameter_names query_parameter_names
