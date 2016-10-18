@@ -643,8 +643,10 @@ function print_{{operationId}}_help {
     echo -e "{{{notes}}}" | fold -sw 80
     echo -e ""
 {{/notes}}
-{{#allParams}}
+{{#hasParams}}
     echo -e "$(tput bold)$(tput setaf 7)Parameters$(tput sgr0)"
+{{/hasParams}}
+{{#allParams}}
 {{#isPathParam}}
     echo -e "  * {{paramName}} [{{baseType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
 {{/isPathParam}}
