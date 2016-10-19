@@ -512,6 +512,16 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
       CodegenOperation op = super.fromOperation(path, httpMethod, operation, 
                                                 definitions, swagger);
 
+
+      if(op.vendorExtensions.containsKey("x-bash-codegen-description")) {
+        String bash_description 
+          = (String)op.vendorExtensions.get("x-bash-codegen-description");
+
+        op.vendorExtensions.put("x-bash-codegen-description",
+          escapeText(bash_description));
+
+      }
+
       for (CodegenParameter p : op.bodyParams) {
         if(p.dataType != null && definitions.get(p.dataType) != null) {
           /**
