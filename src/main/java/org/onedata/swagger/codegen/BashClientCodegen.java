@@ -442,21 +442,21 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
         /**
          * Convert all markdown section 1 level headers with bold
          */ 
-        result = result.replaceAll("(?m)^\\s*\\#\\s+(.+)$",
+        result = result.replaceAll("(?m)^\\#\\s+(.+)$",
                           "\n\\$\\(tput bold\\)\\$\\(tput setaf 7\\)"
                           +"$1\\$\\(tput sgr0\\)");
 
         /**
          * Convert all markdown section 2 level headers with bold
          */ 
-        result = result.replaceAll("(?m)^\\s*\\#\\#\\s+(.+)$",
+        result = result.replaceAll("(?m)^\\#\\#\\s+(.+)$",
                           "\n\\$\\(tput bold\\)\\$\\(tput setaf 7\\)"
                           +"$1\\$\\(tput sgr0\\)");
 
         /**
          * Convert all markdown section 3 level headers with bold
          */ 
-        result = result.replaceAll("(?m)^\\s*\\#\\#\\#\\s+(.+)$",
+        result = result.replaceAll("(?m)^\\#\\#\\#\\s+(.+)$",
                           "\n\\$\\(tput bold\\)\\$\\(tput setaf 7\\)"
                           +"$1\\$\\(tput sgr0\\)");
 
@@ -567,9 +567,30 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
   @Override
   public void preprocessSwagger(Swagger swagger) {
       super.preprocessSwagger(swagger);
+
       if ("/".equals(swagger.getBasePath())) {
           swagger.setBasePath("");
       }
+
+      if(swagger.getInfo() != null 
+         && swagger.getInfo().getVendorExtensions()!=null) {
+        
+        String bash_codegen_app_description 
+          = (String)swagger.getInfo().getVendorExtensions()
+                                            .get("x-bash-codegen-description");
+
+        if(bash_codegen_app_description != null) {
+
+          bash_codegen_app_description 
+            = escapeText(bash_codegen_app_description);            
+
+          additionalProperties.put("x-bash-codegen-description", 
+            bash_codegen_app_description);
+
+        }
+      
+      }
+
   }
 
 }
