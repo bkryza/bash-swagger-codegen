@@ -584,7 +584,7 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
           bash_codegen_app_description 
             = escapeText(bash_codegen_app_description);            
 
-          additionalProperties.put("x-bash-codegen-description", 
+          additionalProperties.put("x-bash-codegen-app-description", 
             bash_codegen_app_description);
 
         }

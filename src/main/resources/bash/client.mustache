@@ -656,8 +656,8 @@ function print_about {
     echo -e "Contact: {{#swagger}}{{#info}}{{#contact}}{{email}}{{/contact}}{{/info}}{{/swagger}}"
     echo ""
 read -d '' appdescription <<EOF
-{{#x-bash-codegen-description}}{{{x-bash-codegen-description}}}{{/x-bash-codegen-description}}
-{{^x-bash-codegen-description}}{{{appDescription}}}{{/x-bash-codegen-description}}
+{{#x-bash-codegen-app-description}}{{{x-bash-codegen-app-description}}}{{/x-bash-codegen-app-description}}
+{{^x-bash-codegen-app-description}}{{{appDescription}}}{{/x-bash-codegen-app-description}}
 EOF
 echo "$appdescription" | fold -sw 80
 }
