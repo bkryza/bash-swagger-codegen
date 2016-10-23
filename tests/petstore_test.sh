@@ -107,3 +107,20 @@ export PETSTORE_HOST="http://petstore.swagger.io"
             bash $PETSTORE_CLI -ct json -ac xml addPet"
     [[ "$output" =~ "<id>37567</id>" ]]
 }
+
+
+#
+# Test example usage description in help
+#
+@test "findPetsByStatus example use" {
+    run bash $PETSTORE_CLI findPetsByStatus -h
+    [[ "$output" =~ "Example use" ]]
+    [[ "$output" =~ "petstore-cli findPetsByStatus status=available" ]]
+}
+
+@test "findPetsById no example use" {
+    run bash $PETSTORE_CLI findPetsById -h
+    [[ ! "$output" =~ "Example use" ]]
+}
+
+

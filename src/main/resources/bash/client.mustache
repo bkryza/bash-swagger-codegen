@@ -738,6 +738,13 @@ EOF
     echo ""
     echo -e "$(tput bold)$(tput setaf 7)Responses$(tput sgr0)"
     echo -e "  $resp" | column -t -s ';'
+{{#vendorExtensions}}
+{{#x-bash-codegen-sample}}
+    echo ""
+    echo -e "$(tput bold)$(tput setaf 7)Example use$(tput sgr0)"
+    echo -e '  {{{x-bash-codegen-sample}}}' | fold -sw 80 | sed '2,$s/^/    /'
+{{/x-bash-codegen-sample}}
+{{/vendorExtensions}}
 }
 {{/operation}}
 {{/operations}}

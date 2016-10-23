@@ -141,6 +141,12 @@
                "application/xml",
                "application/json"
             ],
+            "x-code-samples":[
+               {
+                  "lang": "Shell",
+                  "source": "petstore-cli findPetsByStatus status=available"
+               }
+            ],
             "parameters":[  
                {  
                   "name":"status",

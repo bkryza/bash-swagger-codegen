@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
 
@@ -512,14 +513,39 @@ public class BashClientCodegen extends DefaultCodegen implements CodegenConfig {
       CodegenOperation op = super.fromOperation(path, httpMethod, operation, 
                                                 definitions, swagger);
 
-
+      /**
+       * Check if the operation has a Bash codegen specific description
+       * for help
+       */
       if(op.vendorExtensions.containsKey("x-bash-codegen-description")) {
         String bash_description 
           = (String)op.vendorExtensions.get("x-bash-codegen-description");
 
         op.vendorExtensions.put("x-bash-codegen-description",
           escapeText(bash_description));
+      }
 
+      /**
+       * Check if operation has an 'x-code-samples' vendor extension with
+       * Shell example
+       */
+      if(op.vendorExtensions.containsKey("x-code-samples")) {
+
+        List codesamples = (List)op.vendorExtensions.get("x-code-samples");
+
+        for (Object codesample : codesamples) {
+          ObjectNode codesample_object = (ObjectNode)codesample;
+
+          if((codesample_object.get("lang").asText()).equals("Shell")) {
+
+            op.vendorExtensions.put("x-bash-codegen-sample",
+              escapeUnsafeCharacters(
+                codesample_object.get("source").asText()));
+
+          }
+
+        }
+        
       }
 
       for (CodegenParameter p : op.bodyParams) {
