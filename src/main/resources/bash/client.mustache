@@ -710,19 +710,19 @@ function print_{{operationId}}_help {
 {{/hasParams}}
 {{#allParams}}
 {{#isPathParam}}
-    echo -e "  * {{baseName}} [{{dataType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}} - {{{description}}} Specify as {{baseName}}=value" | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e "  * $(tput smul){{baseName}} [{{dataType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}}$(tput sgr0) - {{{description}}} Specify as {{baseName}}=value" | fold -sw 80 | sed '2,$s/^/    /'
 {{/isPathParam}}
 {{#isQueryParam}}
-    echo -e "  * {{baseName}} [{{dataType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}} - {{{description}}}{{#isContainer}} Specify as: {{#vendorExtensions}}{{#x-codegen-collection-multi}}{{baseName}}=value1 {{baseName}}=value2 {{baseName}}=...{{/x-codegen-collection-multi}}{{#x-codegen-collection-csv}}{{baseName}}="value1,value2,..."{{/x-codegen-collection-csv}}{{#x-codegen-collection-pipes}}{{baseName}}="value1|value2|..."{{/x-codegen-collection-pipes}}{{#x-codegen-collection-ssv}}{{baseName}}="value1 value2 ..."{{/x-codegen-collection-ssv}}{{#x-codegen-collection-tsv}}{{baseName}}="value1\tvalue2\t..."{{/x-codegen-collection-tsv}}{{/vendorExtensions}}{{/isContainer}}{{^isContainer}} Specify as: {{baseName}}=value{{/isContainer}}" \
+    echo -e "  * $(tput smul){{baseName}} [{{dataType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}}$(tput sgr0) - {{{description}}}{{#isContainer}} Specify as: {{#vendorExtensions}}{{#x-codegen-collection-multi}}{{baseName}}=value1 {{baseName}}=value2 {{baseName}}=...{{/x-codegen-collection-multi}}{{#x-codegen-collection-csv}}{{baseName}}="value1,value2,..."{{/x-codegen-collection-csv}}{{#x-codegen-collection-pipes}}{{baseName}}="value1|value2|..."{{/x-codegen-collection-pipes}}{{#x-codegen-collection-ssv}}{{baseName}}="value1 value2 ..."{{/x-codegen-collection-ssv}}{{#x-codegen-collection-tsv}}{{baseName}}="value1\tvalue2\t..."{{/x-codegen-collection-tsv}}{{/vendorExtensions}}{{/isContainer}}{{^isContainer}} Specify as: {{baseName}}=value{{/isContainer}}" \
         | fold -sw 80 | sed '2,$s/^/    /'
 {{/isQueryParam}}
 {{#isHeaderParam}}
-    echo -e "  * {{baseName}} [{{dataType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}} - {{{description}}} Specify as {{baseName}}:value" | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e "  * $(tput smul){{baseName}} [{{dataType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}}$(tput sgr0) - {{{description}}} Specify as {{baseName}}:value" | fold -sw 80 | sed '2,$s/^/    /'
 {{/isHeaderParam}}
 {{/allParams}}
 {{#allParams}}
 {{#isBodyParam}}
-    echo -e "  * body [{{#consumes}}{{mediaType}}{{#hasMore}},{{/hasMore}}{{/consumes}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e "  * $(tput smul)body [{{#consumes}}{{mediaType}}{{#hasMore}},{{/hasMore}}{{/consumes}}]{{#required}} (required){{/required}}$(tput sgr0) - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
     echo -e ""
 {{#vendorExtensions}}
 {{#x-codegen-body-example}}
@@ -736,7 +736,26 @@ function print_{{operationId}}_help {
     echo ""
     echo -e "$(tput bold)$(tput setaf 7)Responses$(tput sgr0)"
 {{#responses}}
-  echo -e "  {{code}};{{{message}}}" | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+    case {{code}} in
+        1*)
+        echo -e "$(tput setaf 7)  {{code}};{{{message}}}$(tput sgr0)" | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+        ;;
+        2*)
+        echo -e "$(tput setaf 2)  {{code}};{{{message}}}$(tput sgr0)" | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+        ;;
+        3*)
+        echo -e "$(tput setaf 3)  {{code}};{{{message}}}$(tput sgr0)" | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+        ;;
+        4*)
+        echo -e "$(tput setaf 1)  {{code}};{{{message}}}$(tput sgr0)" | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+        ;;
+        5*)
+        echo -e "$(tput setaf 5)  {{code}};{{{message}}}$(tput sgr0)" | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+        ;;
+        *)
+        echo -e "$(tput setaf 7)  {{code}};{{{message}}}$(tput sgr0)" | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+        ;;
+    esac
 {{/responses}}
 {{#vendorExtensions}}
 {{#x-bash-codegen-sample}}
