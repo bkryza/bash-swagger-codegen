@@ -719,6 +719,8 @@ function print_{{operationId}}_help {
 {{#isHeaderParam}}
     echo -e "  * {{baseName}} [{{dataType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}} - {{{description}}} Specify as {{baseName}}:value" | fold -sw 80 | sed '2,$s/^/    /'
 {{/isHeaderParam}}
+{{/allParams}}
+{{#allParams}}
 {{#isBodyParam}}
     echo -e "  * body [{{#consumes}}{{mediaType}}{{#hasMore}},{{/hasMore}}{{/consumes}}]{{#required}} (required){{/required}} - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
     echo -e ""
