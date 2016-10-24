@@ -563,19 +563,21 @@ $(tput bold)$(tput setaf 7){{appName}} command line client (API version {{#swagg
 
 $(tput bold)$(tput setaf 7)Usage$(tput sgr0)
 
-  ${script_name} [-h|--help] [-V|--version] [--about] [<curl-options>]
-           --host <url> [--dry-run] <operation> [-h|--help] [<headers>] 
-           [<parameters>]
+  $(tput setaf 2)${script_name}$(tput sgr0) [-h|--help] [-V|--version] [--about] [$(tput setaf 1)<curl-options>$(tput sgr0)]
+           [--host $(tput setaf 6)<url>$(tput sgr0)] [--dry-run] $(tput setaf 3)<operation>$(tput sgr0) [-h|--help] [$(tput setaf 4)<headers>$(tput sgr0)] 
+           [$(tput setaf 5)<parameters>$(tput sgr0)]
 
-  - <curl-options> - any valid cURL options can be passed before <operation>
-  - <headers> - HTTP headers can be passed in the form HEADER:VALUE
-  - <parameters> - REST operation parameters can be passed in the following 
+  - $(tput setaf 6)<url>$(tput sgr0) - endpoint of the REST service without basepath
+{{#x-codegen-host-env}}           Can also be specified in {{x-codegen-host-env}} environment variable.{{/x-codegen-host-env}}
+  - $(tput setaf 1)<curl-options>$(tput sgr0) - any valid cURL options can be passed before $(tput setaf 3)<operation>$(tput sgr0)
+  - $(tput setaf 4)<headers>$(tput sgr0) - HTTP headers can be passed in the form $(tput setaf 4)HEADER:VALUE$(tput sgr0)
+  - $(tput setaf 5)<parameters>$(tput sgr0) - REST operation parameters can be passed in the following 
                    forms:
-                    * KEY=VALUE - path or query parameters
-                    * KEY:=VALUE - body parameters which will be added to body 
-                                   Json as '{ \"KEY\": \"VALUE\" }'
-                    * KEY+=VALUE - body parameters which will be added to body 
-                                   Json as '{ \"KEY\": VALUE }'
+                    * $(tput setaf 3)KEY$(tput sgr0)=$(tput setaf 4)VALUE$(tput sgr0) - path or query parameters
+                    * $(tput setaf 3)KEY$(tput sgr0):=$(tput setaf 4)VALUE$(tput sgr0) - body parameters which will be added to body 
+                                   Json as '{ "$(tput setaf 3)KEY$(tput sgr0)": "$(tput setaf 4)VALUE$(tput sgr0)" }'
+                    * $(tput setaf 3)KEY$(tput sgr0)+=$(tput setaf 4)VALUE$(tput sgr0) - body parameters which will be added to body 
+                                   Json as '{ "$(tput setaf 3)KEY$(tput sgr0)": $(tput setaf 4)VALUE$(tput sgr0) }'
 
 EOF
 {{#hasAuthMethods}}
@@ -583,20 +585,20 @@ EOF
     echo -e ""
 {{#authMethods}}
 {{#isBasic}}
-    echo -e "  - Basic AUTH - add '-u <username>:<password>' before <operation>"
+    echo -e "  - $(tput setaf 4)Basic AUTH$(tput sgr0) - add '-u <username>:<password>' before $(tput setaf 3)<operation>$(tput sgr0)"
     {{#x-codegen-basicauth-env}}echo -e "                 or export {{x-codegen-basicauth-env}}='<username>:<password>'"{{/x-codegen-basicauth-env}}    
 {{/isBasic}}
 {{#isApiKey}}
 {{#isKeyInHeader}}
-    echo -e "  - Api-key - add '{{keyParamName}}:<access-key>' after <operation>"
+    echo -e "  - $(tput setaf 4)Api-key$(tput sgr0) - add '$(tput setaf 1){{keyParamName}}:<api-key>$(tput sgr0)' after $(tput setaf 3)<operation>$(tput sgr0)"
 {{/isKeyInHeader}}
 {{#isKeyInQuery}}
-    echo -e "  - Api-key - add '{{keyParamName}}=<access-key>' after <operation>"
+    echo -e "  - $(tput setaf 4)Api-key$(tput sgr0) - add '$(tput setaf 1){{keyParamName}}=<api-key>$(tput sgr0)' after $(tput setaf 3)<operation>$(tput sgr0)"
 {{/isKeyInQuery}}
-    {{#x-codegen-apikey-env}}echo -e "              or export {{x-codegen-apikey-env}}='<api-key>'"{{/x-codegen-apikey-env}}    
+    {{#x-codegen-apikey-env}}echo -e "              or export $(tput setaf 1){{x-codegen-apikey-env}}='<api-key>'$(tput sgr0)"{{/x-codegen-apikey-env}}    
 {{/isApiKey}}
 {{#isOAuth}}
-    echo -e "  - OAuth2 (flow: {{flow}})"
+    echo -e "  - $(tput setaf 5)OAuth2 (flow: {{flow}})$(tput sgr0)"
     echo -e "      Authorization URL: "
     echo -e "        * {{authorizationUrl}}"
     echo -e "      Scopes:"
@@ -615,7 +617,7 @@ EOF
 read -d '' ops <<EOF
 {{#operations}}
 {{#operation}}
-  {{operationId}};{{{summary}}}
+  $(tput setaf 6){{operationId}}$(tput sgr0);{{{summary}}}
 {{/operation}}
 {{/operations}}
 EOF
@@ -627,7 +629,7 @@ echo "  $ops" | column -t -s ';'
     echo -e "  -h,--help\t\t\t\tPrint this help"
     echo -e "  -V,--version\t\t\t\tPrint API version"
     echo -e "  --about\t\t\t\tPrint the information about service"
-    echo -e "  --host <url>\t\t\t\tSpecify the host URL "
+    echo -e "  --host $(tput setaf 6)<url>$(tput sgr0)\t\t\t\tSpecify the host URL "
 {{#swagger}}
 {{#host}}echo -e "              \t\t\t\t(e.g. 'https://{{host}}')"{{/host}}
 {{^host}}echo -e "              \t\t\t\t(e.g. 'https://127.0.0.1:8080')"{{/host}}
@@ -636,8 +638,8 @@ echo "  $ops" | column -t -s ';'
     echo -e "         \t\t\t\trequired parameters or wrong content type"
     echo -e "  --dry-run\t\t\t\tPrint out the cURL command without"
     echo -e "           \t\t\t\texecuting it"
-    echo -e "  -ac,--accept <mime-type>\t\tSet the 'Accept' header in the request"
-    echo -e "  -ct,--content-type <mime-type>\tSet the 'Content-type' header in "
+    echo -e "  -ac,--accept $(tput setaf 3)<mime-type>$(tput sgr0)\t\tSet the 'Accept' header in the request"
+    echo -e "  -ct,--content-type $(tput setaf 3)<mime-type>$(tput sgr0)\tSet the 'Content-type' header in "
     echo -e "                                \tthe request"
     echo ""
 }
@@ -710,19 +712,19 @@ function print_{{operationId}}_help {
 {{/hasParams}}
 {{#allParams}}
 {{#isPathParam}}
-    echo -e "  * $(tput smul){{baseName}} [{{dataType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}}$(tput sgr0) - {{{description}}} Specify as {{baseName}}=value" | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e "  * $(tput setaf 2){{baseName}}$(tput sgr0) $(tput setaf 4)[{{dataType}}]$(tput sgr0){{#required}} $(tput setaf 1)(required)$(tput sgr0){{/required}}{{#defaultValue}} $(tput setaf 6)(default: {{defaultValue}}){{/defaultValue}}$(tput sgr0) - {{{description}}} $(tput setaf 3)Specify as: {{baseName}}=value$(tput sgr0)" | fold -sw 80 | sed '2,$s/^/    /'
 {{/isPathParam}}
 {{#isQueryParam}}
-    echo -e "  * $(tput smul){{baseName}} [{{dataType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}}$(tput sgr0) - {{{description}}}{{#isContainer}} Specify as: {{#vendorExtensions}}{{#x-codegen-collection-multi}}{{baseName}}=value1 {{baseName}}=value2 {{baseName}}=...{{/x-codegen-collection-multi}}{{#x-codegen-collection-csv}}{{baseName}}="value1,value2,..."{{/x-codegen-collection-csv}}{{#x-codegen-collection-pipes}}{{baseName}}="value1|value2|..."{{/x-codegen-collection-pipes}}{{#x-codegen-collection-ssv}}{{baseName}}="value1 value2 ..."{{/x-codegen-collection-ssv}}{{#x-codegen-collection-tsv}}{{baseName}}="value1\tvalue2\t..."{{/x-codegen-collection-tsv}}{{/vendorExtensions}}{{/isContainer}}{{^isContainer}} Specify as: {{baseName}}=value{{/isContainer}}" \
+    echo -e "  * $(tput setaf 2){{baseName}}$(tput sgr0) $(tput setaf 4)[{{dataType}}]$(tput sgr0){{#required}} $(tput setaf 1)(required)$(tput sgr0){{/required}}{{#defaultValue}} $(tput setaf 6)(default: {{defaultValue}}){{/defaultValue}}$(tput sgr0) - {{{description}}}$(tput setaf 3){{#isContainer}} Specify as: {{#vendorExtensions}}{{#x-codegen-collection-multi}}{{baseName}}=value1 {{baseName}}=value2 {{baseName}}=...{{/x-codegen-collection-multi}}{{#x-codegen-collection-csv}}{{baseName}}="value1,value2,..."{{/x-codegen-collection-csv}}{{#x-codegen-collection-pipes}}{{baseName}}="value1|value2|..."{{/x-codegen-collection-pipes}}{{#x-codegen-collection-ssv}}{{baseName}}="value1 value2 ..."{{/x-codegen-collection-ssv}}{{#x-codegen-collection-tsv}}{{baseName}}="value1\tvalue2\t..."{{/x-codegen-collection-tsv}}{{/vendorExtensions}}{{/isContainer}}{{^isContainer}} Specify as: {{baseName}}=value{{/isContainer}}$(tput sgr0)" \
         | fold -sw 80 | sed '2,$s/^/    /'
 {{/isQueryParam}}
 {{#isHeaderParam}}
-    echo -e "  * $(tput smul){{baseName}} [{{dataType}}]{{#required}} (required){{/required}}{{#defaultValue}} (default: {{defaultValue}}){{/defaultValue}}$(tput sgr0) - {{{description}}} Specify as {{baseName}}:value" | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e "  * $(tput setaf 2){{baseName}}$(tput sgr0) $(tput setaf 4)[{{dataType}}]$(tput sgr0){{#required}} $(tput setaf 1)(required)$(tput sgr0){{/required}}{{#defaultValue}} $(tput setaf 6)(default: {{defaultValue}}){{/defaultValue}}$(tput sgr0) - {{{description}}} $(tput setaf 3)Specify as: {{baseName}}:value$(tput sgr0)" | fold -sw 80 | sed '2,$s/^/    /'
 {{/isHeaderParam}}
 {{/allParams}}
 {{#allParams}}
 {{#isBodyParam}}
-    echo -e "  * $(tput smul)body [{{#consumes}}{{mediaType}}{{#hasMore}},{{/hasMore}}{{/consumes}}]{{#required}} (required){{/required}}$(tput sgr0) - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
+    echo -e "  * $(tput setaf 2)body$(tput sgr0) $(tput setaf 4)[{{#consumes}}{{mediaType}}{{#hasMore}},{{/hasMore}}{{/consumes}}]$(tput sgr0){{#required}} $(tput setaf 1)(required)$(tput sgr0){{/required}}$(tput sgr0) - {{{description}}}" | fold -sw 80 | sed '2,$s/^/    /'
     echo -e ""
 {{#vendorExtensions}}
 {{#x-codegen-body-example}}
@@ -756,6 +758,14 @@ function print_{{operationId}}_help {
         echo -e "$(tput setaf 7)  {{code}};{{{message}}}$(tput sgr0)" | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
         ;;
     esac
+{{#headers}}
+{{#-first}}
+        echo -e "       $(tput bold)$(tput setaf 7)Response headers$(tput sgr0)"
+{{/-first}}
+{{/headers}}
+{{#headers}}
+        echo -e "       $(tput setaf 4){{baseName}}$(tput sgr0) - {{{description}}}" | fold -sw 80 | sed '2,$s/^/        /'
+{{/headers}}
 {{/responses}}
 {{#vendorExtensions}}
 {{#x-bash-codegen-sample}}
