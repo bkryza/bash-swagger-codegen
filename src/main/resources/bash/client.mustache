@@ -731,13 +731,11 @@ function print_{{operationId}}_help {
 {{/vendorExtensions}}
 {{/isBodyParam}}
 {{/allParams}}
-read -d '' resp <<EOF{{#responses}}
-  {{code}};{{{message}}}
-{{/responses}}
-EOF
     echo ""
     echo -e "$(tput bold)$(tput setaf 7)Responses$(tput sgr0)"
-    echo -e "  $resp" | column -t -s ';'
+{{#responses}}
+  echo -e "  {{code}};{{{message}}}" | column -t -s ';' | fold -sw 80 | sed '2,$s/^/       /'
+{{/responses}}
 {{#vendorExtensions}}
 {{#x-bash-codegen-sample}}
     echo ""
