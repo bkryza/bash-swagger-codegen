@@ -102,8 +102,9 @@ operation_parameters_collection_type["{{operationId}}:::{{baseName}}"]={{#isCont
 
 
 ##
-# Map for body parameters passed after operation as PARAMETER:=VALUE
-# These will be mapped to top level json keys ( {"PARAMETER": VALUE})
+# Map for body parameters passed after operation as 
+# PARAMETER==STRING_VALUE or PARAMETER:=NUMERIC_VALUE
+# These will be mapped to top level json keys ( { "PARAMETER": "VALUE" })
 declare -A body_parameters
 
 ## 
@@ -565,19 +566,21 @@ $(tput bold)$(tput setaf 7)Usage$(tput sgr0)
 
   $(tput setaf 2)${script_name}$(tput sgr0) [-h|--help] [-V|--version] [--about] [$(tput setaf 1)<curl-options>$(tput sgr0)]
            [--host $(tput setaf 6)<url>$(tput sgr0)] [--dry-run] $(tput setaf 3)<operation>$(tput sgr0) [-h|--help] [$(tput setaf 4)<headers>$(tput sgr0)] 
-           [$(tput setaf 5)<parameters>$(tput sgr0)]
+           [$(tput setaf 5)<parameters>$(tput sgr0)] [$(tput setaf 5)<body-parameters>$(tput sgr0)]
 
   - $(tput setaf 6)<url>$(tput sgr0) - endpoint of the REST service without basepath
 {{#x-codegen-host-env}}           Can also be specified in {{x-codegen-host-env}} environment variable.{{/x-codegen-host-env}}
   - $(tput setaf 1)<curl-options>$(tput sgr0) - any valid cURL options can be passed before $(tput setaf 3)<operation>$(tput sgr0)
-  - $(tput setaf 4)<headers>$(tput sgr0) - HTTP headers can be passed in the form $(tput setaf 4)HEADER:VALUE$(tput sgr0)
+  - $(tput setaf 4)<headers>$(tput sgr0) - HTTP headers can be passed in the form $(tput setaf 3)HEADER$(tput sgr0):$(tput setaf 4)VALUE$(tput sgr0)
   - $(tput setaf 5)<parameters>$(tput sgr0) - REST operation parameters can be passed in the following 
                    forms:
                     * $(tput setaf 3)KEY$(tput sgr0)=$(tput setaf 4)VALUE$(tput sgr0) - path or query parameters
-                    * $(tput setaf 3)KEY$(tput sgr0):=$(tput setaf 4)VALUE$(tput sgr0) - body parameters which will be added to body 
-                                   Json as '{ "$(tput setaf 3)KEY$(tput sgr0)": "$(tput setaf 4)VALUE$(tput sgr0)" }'
-                    * $(tput setaf 3)KEY$(tput sgr0)+=$(tput setaf 4)VALUE$(tput sgr0) - body parameters which will be added to body 
-                                   Json as '{ "$(tput setaf 3)KEY$(tput sgr0)": $(tput setaf 4)VALUE$(tput sgr0) }'
+  - $(tput setaf 5)<body-parameters>$(tput sgr0) - simple JSON body content (first level only) can be build using the following
+                        arguments: 
+                       * $(tput setaf 3)KEY$(tput sgr0)==$(tput setaf 4)VALUE$(tput sgr0) - body parameters which will be added to body 
+                                      JSON as '{ ..., "$(tput setaf 3)KEY$(tput sgr0)": "$(tput setaf 4)VALUE$(tput sgr0)", ... }'
+                       * $(tput setaf 3)KEY$(tput sgr0):=$(tput setaf 4)VALUE$(tput sgr0) - body parameters which will be added to body 
+                                      JSON as '{ ..., "$(tput setaf 3)KEY$(tput sgr0)": $(tput setaf 4)VALUE$(tput sgr0), ... }'
 
 EOF
 {{#hasAuthMethods}}
@@ -586,7 +589,7 @@ EOF
 {{#authMethods}}
 {{#isBasic}}
     echo -e "  - $(tput setaf 4)Basic AUTH$(tput sgr0) - add '-u <username>:<password>' before $(tput setaf 3)<operation>$(tput sgr0)"
-    {{#x-codegen-basicauth-env}}echo -e "                 or export {{x-codegen-basicauth-env}}='<username>:<password>'"{{/x-codegen-basicauth-env}}    
+    {{#x-codegen-basicauth-env}}echo -e "                 or export $(tput setaf 1){{x-codegen-basicauth-env}}='<username>:<password>'$(tput sgr0)"{{/x-codegen-basicauth-env}}    
 {{/isBasic}}
 {{#isApiKey}}
 {{#isKeyInHeader}}
@@ -859,7 +862,7 @@ function call_{{operationId}} {
         fi
         rm "${body_content_temp_file}"
     #
-    # If not, try to build the content body from arguments KEY:=VALUE and KEY+=VALUE
+    # If not, try to build the content body from arguments KEY==VALUE and KEY:=VALUE
     #
     else
         body_json_curl=$(body_parameters_to_json)
@@ -993,19 +996,19 @@ case $key in
 {{/operations}}
 {{/apis}}
 {{/apiInfo}}
-    *:=*)
+    *==*)
     # Parse body arguments and convert them into top level 
     # JSON properties passed in the body content as strings
     if [[ "$operation" ]]; then
-        IFS=':=' read body_key sep body_value <<< "$key"
+        IFS='==' read body_key sep body_value <<< "$key"
         body_parameters[${body_key}]="\"${body_value}\""
     fi
     ;;
-    *+=*)
+    *:=*)
     # Parse body arguments and convert them into top level 
     # JSON properties passed in the body content without qoutes
     if [[ "$operation" ]]; then
-        IFS='+=' read body_key sep body_value <<< "$key"
+        IFS=':=' read body_key sep body_value <<< "$key"
         body_parameters[${body_key}]=${body_value}
     fi
     ;;

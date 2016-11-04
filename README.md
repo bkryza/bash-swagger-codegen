@@ -53,29 +53,33 @@ $ chmod +x output/petstore-cli
 
 Enjoy:
 ```shell
-$ output/petstore-cli --help
+$ output/petstore-cli -h
 
 Swagger Petstore command line client (API version 1.0.0)
 
 Usage
 
   petstore-cli [-h|--help] [-V|--version] [--about] [<curl-options>]
-           --host <url> [--dry-run] <operation> [-h|--help] [<headers>]
-           [<parameters>]
+           [--host <url>] [--dry-run] <operation> [-h|--help] [<headers>]
+           [<parameters>] [<body-parameters>]
 
+  - <url> - endpoint of the REST service without basepath
+           Can also be specified in PETSTORE_HOST environment variable.
   - <curl-options> - any valid cURL options can be passed before <operation>
   - <headers> - HTTP headers can be passed in the form HEADER:VALUE
   - <parameters> - REST operation parameters can be passed in the following
                    forms:
                     * KEY=VALUE - path or query parameters
-                    * KEY:=VALUE - body parameters which will be added to body
-                                   Json as '{ \"KEY\": \"VALUE\" }'
-                    * KEY+=VALUE - body parameters which will be added to body
-                                   Json as '{ \"KEY\": VALUE }'
+  - <body-parameters> - simple JSON body content (first level only) can be build using the following
+                        arguments:
+                       * KEY==VALUE - body parameters which will be added to body
+                                      JSON as '{ ..., "KEY": "VALUE", ... }'
+                       * KEY:=VALUE - body parameters which will be added to body
+                                      JSON as '{ ..., "KEY": VALUE, ... }'
 
 Authentication methods
 
-  - Api-key - add 'api_key:<access-key>' after <operation>
+  - Api-key - add 'api_key:<api-key>' after <operation>
               or export PETSTORE_API_KEY='<api-key>'
   - OAuth2 (flow: implicit)
       Authorization URL:
@@ -113,14 +117,18 @@ Operations (grouped by tags)
   updateUser                 Updated user
 
 Options
-  -h,--help           Print this help
+  -h,--help       Print this help
   -V,--version        Print API version
-  --about             Print the information about service
-  --host <url>        Specify the host URL (e.g. 'https://petstore.swagger.io')
-  --force             Force command invocation in spite of missing required  parameters or wrong content type
-  --dry-run           Print out the cURL command without executing it
+  --about       Print the information about service
+  --host <url>        Specify the host URL
+                      (e.g. 'https://petstore.swagger.io')
+  --force       Force command invocation in spite of missing
+                required parameters or wrong content type
+  --dry-run       Print out the cURL command without
+                  executing it
   -ac,--accept <mime-type>    Set the 'Accept' header in the request
-  -ct,--content-type <mime-type>  Set the 'Content-type' header in the request
+  -ct,--content-type <mime-type>  Set the 'Content-type' header in
+                                  the request
 ```
 
 Client generator takes several specific configuration options:
@@ -153,14 +161,14 @@ $ echo '{"id":891,"name":"lucky","status":"available"}' | output/petstore-cli --
 {"id":891,"name":"lucky","photoUrls":[],"tags":[],"status":"available"}
 
 # The above is equivalent to
-$ output/petstore-cli --host http://petstore.swagger.io --content-type json --accept xml addPet id+=891 name:=lucky status:=available
+$ output/petstore-cli --host http://petstore.swagger.io --content-type json --accept xml addPet id:=891 name==lucky status==available
 
 <xml version="1.0" encoding="UTF-8" standalone="yes"?><Pet><id>891</id><name>lucky</name><photoUrls/><status>available</status><tags/></Pet>
 
 
 # Preview the cURL command without actually executing it
 # The above is equivalent to
-$ output/petstore-cli --host http://petstore.swagger.io --content-type json --dry-run addPet id+=891 name:=lucky status:=available
+$ output/petstore-cli --host http://petstore.swagger.io --content-type json --dry-run addPet id:=891 name==lucky status==available
 
 curl -sS --tlsv1.2 -H 'Content-type: application/json' -X POST -d '{"name": "lucky", "status": "available", "id": 891}' "http://petstore.swagger.io/v2/pet"
 ```
