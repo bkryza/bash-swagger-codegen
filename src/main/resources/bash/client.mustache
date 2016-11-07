@@ -565,21 +565,25 @@ $(tput bold)$(tput setaf 7){{appName}} command line client (API version {{#swagg
 $(tput bold)$(tput setaf 7)Usage$(tput sgr0)
 
   $(tput setaf 2)${script_name}$(tput sgr0) [-h|--help] [-V|--version] [--about] [$(tput setaf 1)<curl-options>$(tput sgr0)]
+           [-ac|--accept $(tput setaf 2)<mime-type>$(tput sgr0)] [-ct,--content-type $(tput setaf 2)<mime-type>$(tput sgr0)]
            [--host $(tput setaf 6)<url>$(tput sgr0)] [--dry-run] $(tput setaf 3)<operation>$(tput sgr0) [-h|--help] [$(tput setaf 4)<headers>$(tput sgr0)] 
            [$(tput setaf 5)<parameters>$(tput sgr0)] [$(tput setaf 5)<body-parameters>$(tput sgr0)]
 
   - $(tput setaf 6)<url>$(tput sgr0) - endpoint of the REST service without basepath
 {{#x-codegen-host-env}}           Can also be specified in {{x-codegen-host-env}} environment variable.{{/x-codegen-host-env}}
   - $(tput setaf 1)<curl-options>$(tput sgr0) - any valid cURL options can be passed before $(tput setaf 3)<operation>$(tput sgr0)
+  - $(tput setaf 2)<mime-type>$(tput sgr0) - either full mime-type or one of supported abbreviations: 
+                   (text, html, md, csv, css, rtf, json, xml, yaml, js, bin, 
+                    rdf, jpg, png, gif, bmp, tiff)
   - $(tput setaf 4)<headers>$(tput sgr0) - HTTP headers can be passed in the form $(tput setaf 3)HEADER$(tput sgr0):$(tput setaf 4)VALUE$(tput sgr0)
   - $(tput setaf 5)<parameters>$(tput sgr0) - REST operation parameters can be passed in the following 
                    forms:
-                    * $(tput setaf 3)KEY$(tput sgr0)=$(tput setaf 4)VALUE$(tput sgr0) - path or query parameters
-  - $(tput setaf 5)<body-parameters>$(tput sgr0) - simple JSON body content (first level only) can be build using the following
-                        arguments: 
-                       * $(tput setaf 3)KEY$(tput sgr0)==$(tput setaf 4)VALUE$(tput sgr0) - body parameters which will be added to body 
+                   * $(tput setaf 3)KEY$(tput sgr0)=$(tput setaf 4)VALUE$(tput sgr0) - path or query parameters
+  - $(tput setaf 5)<body-parameters>$(tput sgr0) - simple JSON body content (first level only) can be build 
+                        using the following arguments: 
+                        * $(tput setaf 3)KEY$(tput sgr0)==$(tput setaf 4)VALUE$(tput sgr0) - body parameters which will be added to body 
                                       JSON as '{ ..., "$(tput setaf 3)KEY$(tput sgr0)": "$(tput setaf 4)VALUE$(tput sgr0)", ... }'
-                       * $(tput setaf 3)KEY$(tput sgr0):=$(tput setaf 4)VALUE$(tput sgr0) - body parameters which will be added to body 
+                        * $(tput setaf 3)KEY$(tput sgr0):=$(tput setaf 4)VALUE$(tput sgr0) - body parameters which will be added to body 
                                       JSON as '{ ..., "$(tput setaf 3)KEY$(tput sgr0)": $(tput setaf 4)VALUE$(tput sgr0), ... }'
 
 EOF

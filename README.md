@@ -60,21 +60,25 @@ Swagger Petstore command line client (API version 1.0.0)
 Usage
 
   petstore-cli [-h|--help] [-V|--version] [--about] [<curl-options>]
+           [-ac|--accept <mime-type>] [-ct,--content-type <mime-type>]
            [--host <url>] [--dry-run] <operation> [-h|--help] [<headers>]
            [<parameters>] [<body-parameters>]
 
   - <url> - endpoint of the REST service without basepath
            Can also be specified in PETSTORE_HOST environment variable.
   - <curl-options> - any valid cURL options can be passed before <operation>
+  - <mime-type> - either full mime-type or one of supported abbreviations:
+                   (text, html, md, csv, css, rtf, json, xml, yaml, js, bin,
+                    rdf, jpg, png, gif, bmp, tiff)
   - <headers> - HTTP headers can be passed in the form HEADER:VALUE
   - <parameters> - REST operation parameters can be passed in the following
                    forms:
-                    * KEY=VALUE - path or query parameters
-  - <body-parameters> - simple JSON body content (first level only) can be build using the following
-                        arguments:
-                       * KEY==VALUE - body parameters which will be added to body
+                   * KEY=VALUE - path or query parameters
+  - <body-parameters> - simple JSON body content (first level only) can be build
+                        using the following arguments:
+                        * KEY==VALUE - body parameters which will be added to body
                                       JSON as '{ ..., "KEY": "VALUE", ... }'
-                       * KEY:=VALUE - body parameters which will be added to body
+                        * KEY:=VALUE - body parameters which will be added to body
                                       JSON as '{ ..., "KEY": VALUE, ... }'
 
 Authentication methods
