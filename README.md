@@ -1,6 +1,11 @@
 # Bash client Swagger codegen
 [![Build Status](https://api.travis-ci.org/bkryza/bash-swagger-codegen.svg?branch=master)](https://travis-ci.org/bkryza/bash-swagger-codegen)
 
+
+> [DEPRECATED] This repository is now deprecated as it's functionality has been integrated
+> into the main [swagger-codegen](https://github.com/swagger-api/swagger-codegen)
+> project.
+
 ## Overview
 This is a Bash client script generator for REST services from their Swagger™ specification. The generated script provides a wrapper layer over [cURL](https://curl.haxx.se).
 
@@ -203,7 +208,7 @@ and add the following to the `~/.bashrc`:
 if [ -f $(brew --prefix)/etc/bash_completion ]; then
   . $(brew --prefix)/etc/bash_completion
 fi
-``` 
+```
 
 ### Zsh
 In Zsh, the generated `_{{scriptName}}` file (e.g. _petstore-cli) must be copied to one of the folders under `$fpath` variable.
@@ -219,7 +224,7 @@ In Zsh, the generated `_{{scriptName}}` file (e.g. _petstore-cli) must be copied
 - [x] Add abbreviated form support for standard headers (Accept, Content-type, X-Auth-Token, ...)
 - [x] Add proper checking for Bash version and cURL availability
 - [ ] Improve `--help` and `--about` formatting
-- [x] Add Zsh completion generation 
+- [x] Add Zsh completion generation
 - [ ] Add support to bash 4.0-4.2 (currently must be >= 4.3)
 - [x] Add environment variables for authentication and hostname
 - [ ] Add manpage generation
